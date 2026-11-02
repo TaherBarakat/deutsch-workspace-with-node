@@ -20,6 +20,42 @@ export function splitMeanings(value) {
     .filter(Boolean);
 }
 
+/**
+ * Reads a comma-separated tag list from a URL param. Deduplicates case
+ * insensitively so "A1.1,a1.1" cannot filter the same tag twice.
+ */
+export function parseTagsParam(value) {
+  const seen = new Set();
+  const tags = [];
+
+  for (const rawTag of String(value ?? '').split(',')) {
+    const tag = rawTag.trim();
+    if (!tag) continue;
+
+    const key = tag.toLowerCase();
+    if (seen.has(key)) continue;
+
+    seen.add(key);
+    tags.push(tag);
+  }
+
+  return tags;
+}
+
+export function toggleTag(tags, name) {
+  const exists = tags.some((tag) => tag.toLowerCase() === name.toLowerCase());
+  return exists
+    ? tags.filter((tag) => tag.toLowerCase() !== name.toLowerCase())
+    : [...tags, name];
+}
+
+export function wordSpeechText(word) {
+  if (!word?.german) return '';
+  return word.type === 'noun' && word.article
+    ? `${word.article} ${word.german}`
+    : word.german;
+}
+
 export function pluralize(count, singular, plural = `${singular}s`) {
   return `${count} ${count === 1 ? singular : plural}`;
 }
@@ -49,6 +85,46 @@ export function groupWordsByTags(words) {
   }
 
   return sorted;
+}
+
+const GENDER_GROUP_ORDER = [
+  { key: 'm', name: 'Masculine', article: 'der' },
+  { key: 'f', name: 'Feminine', article: 'die' },
+  { key: 'n', name: 'Neuter', article: 'das' },
+];
+
+export function groupWordsByGender(words) {
+  const buckets = new Map([
+    ['m', []],
+    ['f', []],
+    ['n', []],
+    ['unknown', []],
+  ]);
+
+  for (const word of words) {
+    const key = word.gender && buckets.has(word.gender) ? word.gender : 'unknown';
+    buckets.get(key).push(word);
+  }
+
+  const groups = GENDER_GROUP_ORDER
+    .filter((group) => buckets.get(group.key).length > 0)
+    .map((group) => ({
+      ...group,
+      words: [...buckets.get(group.key)].sort((left, right) => (
+        left.german.localeCompare(right.german, 'de', { sensitivity: 'base' })
+      )),
+    }));
+
+  if (buckets.get('unknown').length > 0) {
+    groups.push({
+      key: 'unknown',
+      name: 'No gender',
+      article: null,
+      words: buckets.get('unknown'),
+    });
+  }
+
+  return groups;
 }
 
 export function exampleText(example) {

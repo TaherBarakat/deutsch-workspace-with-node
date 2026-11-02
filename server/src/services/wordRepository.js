@@ -19,6 +19,7 @@ function mapRow(row) {
     plural: row.plural,
     english: parseJson(row.english, []),
     parts: row.parts ? parseJson(row.parts, null) : null,
+    opposite: row.opposite ?? null,
     irregular: Boolean(row.irregular),
     example: row.example_de || row.example_en
       ? { de: row.example_de, en: row.example_en }
@@ -65,6 +66,15 @@ function attachTags(words) {
 }
 
 function buildOrderClause(sort) {
+  const genderOrder = `
+    CASE w.gender
+      WHEN 'm' THEN 1
+      WHEN 'f' THEN 2
+      WHEN 'n' THEN 3
+      ELSE 4
+    END
+  `;
+
   switch (sort) {
     case 'alpha_desc':
       return 'w.german COLLATE NOCASE DESC, w.id DESC';
@@ -72,6 +82,10 @@ function buildOrderClause(sort) {
       return 'w.created_at DESC, w.id DESC';
     case 'oldest':
       return 'w.created_at ASC, w.id ASC';
+    case 'gender_desc':
+      return `${genderOrder} DESC, w.german COLLATE NOCASE DESC, w.id DESC`;
+    case 'gender':
+      return `${genderOrder} ASC, w.german COLLATE NOCASE ASC, w.id ASC`;
     case 'alpha':
     default:
       return 'w.german COLLATE NOCASE ASC, w.id ASC';
@@ -80,13 +94,16 @@ function buildOrderClause(sort) {
 
 export function listWords({
   types = [],
+  tags = [],
   tag = null,
+  tagMode = 'any',
   search = '',
   sort = 'alpha',
   limit = null,
 } = {}) {
   const clauses = [];
   const params = {};
+  const activeTags = tags.length > 0 ? tags : (tag ? [tag] : []);
 
   if (types.length > 0) {
     const placeholders = types.map((type, index) => {
@@ -96,16 +113,33 @@ export function listWords({
     clauses.push(`w.type IN (${placeholders.join(', ')})`);
   }
 
-  if (tag) {
-    clauses.push(`
-      EXISTS (
-        SELECT 1
-        FROM word_tags wt
-        JOIN tags t ON t.id = wt.tag_id
-        WHERE wt.word_id = w.id AND t.name = @tag COLLATE NOCASE
-      )
-    `);
-    params.tag = tag;
+  if (activeTags.length > 0) {
+    const placeholders = activeTags.map((tagName, index) => {
+      params[`tag${index}`] = tagName;
+      return `@tag${index}`;
+    });
+
+    if (tagMode === 'all') {
+      // Every selected tag must be present on the word.
+      clauses.push(`
+        (
+          SELECT COUNT(DISTINCT t.name)
+          FROM word_tags wt
+          JOIN tags t ON t.id = wt.tag_id
+          WHERE wt.word_id = w.id AND t.name IN (${placeholders.join(', ')})
+        ) = @tagCount
+      `);
+      params.tagCount = activeTags.length;
+    } else {
+      clauses.push(`
+        EXISTS (
+          SELECT 1
+          FROM word_tags wt
+          JOIN tags t ON t.id = wt.tag_id
+          WHERE wt.word_id = w.id AND t.name IN (${placeholders.join(', ')})
+        )
+      `);
+    }
   }
 
   if (search) {
@@ -158,6 +192,7 @@ function toDatabaseValues(payload) {
     plural: payload.plural,
     english: JSON.stringify(payload.english),
     parts: payload.parts ? JSON.stringify(payload.parts) : null,
+    opposite: payload.opposite,
     irregular: payload.irregular ? 1 : 0,
     exampleDe: payload.example?.de ?? null,
     exampleEn: payload.example?.en ?? null,
@@ -180,10 +215,10 @@ const createTransaction = db.transaction((payload) => {
   try {
     result = db.prepare(`
       INSERT INTO words (
-        type, german, article, gender, plural, english, parts, irregular,
+        type, german, article, gender, plural, english, parts, opposite, irregular,
         example_de, example_en, notes, source_url
       ) VALUES (
-        @type, @german, @article, @gender, @plural, @english, @parts, @irregular,
+        @type, @german, @article, @gender, @plural, @english, @parts, @opposite, @irregular,
         @exampleDe, @exampleEn, @notes, @sourceUrl
       )
     `).run(values);
@@ -209,6 +244,7 @@ const updateTransaction = db.transaction((id, payload) => {
         plural = @plural,
         english = @english,
         parts = @parts,
+        opposite = @opposite,
         irregular = @irregular,
         example_de = @exampleDe,
         example_en = @exampleEn,

@@ -9,6 +9,11 @@ const MAX_TAGS = 20;
 const MAX_TAG_LENGTH = 40;
 const MAX_ENGLISH = 12;
 
+const PARTS_BY_TYPE = {
+  verb: ['present', 'past', 'perfect'],
+  adjective: ['positive', 'comparative', 'superlative'],
+};
+
 function cleanString(value, { max = 500, label = 'Value' } = {}) {
   if (value === null || value === undefined) return null;
   if (typeof value !== 'string') {
@@ -64,13 +69,14 @@ function normalizeSegments(value, fallbackText = '') {
     }));
 }
 
-function normalizeParts(value) {
-  if (!value || typeof value !== 'object') return null;
+function normalizeParts(value, type) {
+  const allowedKeys = PARTS_BY_TYPE[type];
+  if (!allowedKeys || !value || typeof value !== 'object') return null;
 
   const parts = {};
   let hasAnyPart = false;
 
-  for (const key of ['present', 'past', 'perfect']) {
+  for (const key of allowedKeys) {
     const raw = value[key];
     if (!raw) continue;
 
@@ -147,7 +153,10 @@ export function normalizeWordPayload(input) {
       ? cleanString(input.plural, { max: 120, label: 'The plural' })
       : null,
     english: normalizeEnglish(input.english),
-    parts: type === 'verb' ? normalizeParts(input.parts) : null,
+    parts: normalizeParts(input.parts, type),
+    opposite: type === 'adjective'
+      ? cleanString(input.opposite, { max: 120, label: 'The opposite adjective' })
+      : null,
     irregular: type === 'verb' ? Boolean(input.irregular) : false,
     example: normalizeExample(input),
     notes: cleanString(input.notes, { max: 2000, label: 'Notes' }),
@@ -156,6 +165,25 @@ export function normalizeWordPayload(input) {
   };
 
   return payload;
+}
+
+export function normalizeSentencePayload(input) {
+  if (!input || typeof input !== 'object') {
+    throw new ApiError(400, 'A sentence payload is required.');
+  }
+
+  const german = cleanString(input.german, { max: 800, label: 'The German sentence' });
+  if (!german) {
+    throw new ApiError(400, 'The German sentence is required.');
+  }
+
+  return {
+    german,
+    english: cleanString(input.english, { max: 800, label: 'The English translation' }),
+    notes: cleanString(input.notes, { max: 2000, label: 'Notes' }),
+    sourceUrl: normalizeSourceUrl(input.sourceUrl),
+    tags: normalizeTags(input.tags),
+  };
 }
 
 export function parseId(value) {
@@ -175,4 +203,24 @@ export function parseTypes(value) {
     .filter((type) => WORD_TYPES.includes(type));
 
   return [...new Set(types)];
+}
+
+export function parseTags(value) {
+  if (!value) return [];
+
+  const rawTags = (Array.isArray(value) ? value : [value])
+    .flatMap((item) => String(item).split(','));
+
+  const tags = rawTags
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .map((tag) => tag.slice(0, MAX_TAG_LENGTH));
+
+  return [...new Set(tags.map((tag) => tag.toLowerCase()))]
+    .slice(0, MAX_TAGS)
+    .map((lowercaseTag) => tags.find((tag) => tag.toLowerCase() === lowercaseTag));
+}
+
+export function parseTagMode(value) {
+  return String(value ?? '').toLowerCase() === 'all' ? 'all' : 'any';
 }

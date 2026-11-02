@@ -1,4 +1,10 @@
-import { BookOpen, Footprints, Sparkles, Wind } from 'lucide-react';
+import {
+  BookOpen,
+  Footprints,
+  MessageSquareQuote,
+  Sparkles,
+  Wind,
+} from 'lucide-react';
 
 export const GENDERS = {
   m: { article: 'der', label: 'masculine', short: 'm' },
@@ -53,6 +59,17 @@ export const WORD_TYPES = Object.fromEntries(
   WORD_TYPE_LIST.map((type) => [type.key, type]),
 );
 
+export const SENTENCE_META = {
+  key: 'sentence',
+  label: 'Sentences',
+  singular: 'sentence',
+  path: '/sentences',
+  eyebrow: 'Sätze',
+  description: 'Collect whole sentences, tag them, and translate them with Chrome.',
+  icon: MessageSquareQuote,
+  tone: 'sentence',
+};
+
 export const QUICK_TAGS = [
   'A1.1',
   'A1.2',
@@ -71,6 +88,16 @@ export const SORT_OPTIONS = [
   { value: 'alpha_desc', label: 'Z → A' },
   { value: 'newest', label: 'Newest first' },
   { value: 'oldest', label: 'Oldest first' },
+];
+
+export const GENDER_SORT_OPTIONS = [
+  { value: 'gender', label: 'Gender: m → f → n' },
+  { value: 'gender_desc', label: 'Gender: n → f → m' },
+];
+
+export const TAG_MODES = [
+  { value: 'any', label: 'Any tag' },
+  { value: 'all', label: 'All tags' },
 ];
 
 export const STUDY_COUNTS = [

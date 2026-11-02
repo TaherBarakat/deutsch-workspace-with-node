@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 
-export function useTags(type = null, revision = 0) {
+export function useTags(type = null, revision = 0, scope = null) {
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -10,7 +10,7 @@ export function useTags(type = null, revision = 0) {
     let active = true;
 
     api.tags
-      .list(type, controller.signal)
+      .list(type, controller.signal, scope)
       .then((nextTags) => {
         if (!active) return;
         setTags(nextTags);
@@ -25,7 +25,7 @@ export function useTags(type = null, revision = 0) {
       active = false;
       controller.abort();
     };
-  }, [type, revision]);
+  }, [type, revision, scope]);
 
   return { tags, loading };
 }

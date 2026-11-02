@@ -1,6 +1,8 @@
 import { MousePointerClick } from 'lucide-react';
 import { WORD_TYPES } from '../../constants.js';
+import { wordSpeechText } from '../../utils.js';
 import { TagChip } from '../tags/TagChip.jsx';
+import { SpeakButton } from '../ui/SpeakButton.jsx';
 import { GenderBadge } from '../words/GenderBadge.jsx';
 
 export function FlashcardFront({ word }) {
@@ -24,17 +26,24 @@ export function FlashcardFront({ word }) {
       </div>
 
       <div className="flashcard-front__center">
-        {isNoun ? (
-          <>
-            <p className={`flashcard-word flashcard-word--noun text-gender-${word.gender}`}>
-              <span className="article">{word.article}</span>
-              <span>{word.german}</span>
-            </p>
-            <GenderBadge gender={word.gender} />
-          </>
-        ) : (
-          <p className="flashcard-word">{word.german}</p>
-        )}
+        <div className="flashcard-front__word-row">
+          {isNoun ? (
+            <>
+              <p className={`flashcard-word flashcard-word--noun text-gender-${word.gender}`}>
+                <span className="article">{word.article}</span>
+                <span>{word.german}</span>
+              </p>
+              <GenderBadge gender={word.gender} />
+            </>
+          ) : (
+            <p className="flashcard-word">{word.german}</p>
+          )}
+          <SpeakButton
+            text={wordSpeechText(word)}
+            label={`Listen to ${word.german}`}
+            size="lg"
+          />
+        </div>
 
         {word.irregular ? <span className="flashcard-irregular">irregular verb</span> : null}
       </div>

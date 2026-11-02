@@ -1,6 +1,6 @@
 import { ArrowRight, Layers3, Plus, Sparkles } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { WORD_TYPE_LIST } from '../constants.js';
+import { SENTENCE_META, WORD_TYPE_LIST } from '../constants.js';
 import { useStats } from '../hooks/useStats.js';
 import { useRefresh } from '../contexts/RefreshContext.jsx';
 import { pluralize } from '../utils.js';
@@ -23,8 +23,8 @@ export function OverviewPage() {
             <em>one word</em> at a time.
           </h1>
           <p className="hero__lede">
-            Collect verbs and nouns with their full forms, add your own tags,
-            and turn any corner of your vocabulary into a flashcard deck.
+            Collect verbs, nouns, adjectives and adverbs with their full forms, add whole
+            sentences, and turn any corner of your vocabulary into a flashcard deck.
           </p>
 
           <div className="hero__actions">
@@ -38,6 +38,8 @@ export function OverviewPage() {
 
           <div className="hero__stats">
             <span><strong>{stats.total}</strong> words collected</span>
+            <span className="hero__stats-divider" aria-hidden="true" />
+            <span><strong>{stats.sentences ?? 0}</strong> sentences</span>
             <span className="hero__stats-divider" aria-hidden="true" />
             <span><strong>{stats.tags.length}</strong> tags in use</span>
           </div>
@@ -62,7 +64,7 @@ export function OverviewPage() {
         <div className="section-heading">
           <div>
             <p className="eyebrow">Your library</p>
-            <h2>Four kinds of words</h2>
+            <h2>Words and sentences</h2>
           </div>
           <Link to="/study" className="text-link">
             Build a mixed deck <ArrowRight size={14} />
@@ -89,6 +91,23 @@ export function OverviewPage() {
               </Link>
             );
           })}
+
+          <Link
+            to={SENTENCE_META.path}
+            className="type-card type-card--sentence"
+            key={SENTENCE_META.key}
+          >
+            <span className="type-card__icon">
+              <SENTENCE_META.icon size={21} aria-hidden="true" />
+            </span>
+            <span className="type-card__eyebrow">{SENTENCE_META.eyebrow}</span>
+            <strong>{SENTENCE_META.label}</strong>
+            <p>{SENTENCE_META.description}</p>
+            <span className="type-card__footer">
+              {pluralize(stats.sentences ?? 0, 'sentence')}
+              <ArrowRight size={15} />
+            </span>
+          </Link>
         </div>
       </section>
 

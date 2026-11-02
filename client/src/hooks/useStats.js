@@ -4,6 +4,7 @@ import { api } from '../api.js';
 const EMPTY_STATS = {
   total: 0,
   byType: { verb: 0, noun: 0, adjective: 0, adverb: 0 },
+  sentences: 0,
   tags: [],
   recent: [],
 };

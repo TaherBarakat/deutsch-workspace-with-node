@@ -1,5 +1,8 @@
 import { WORD_TYPES } from '../../constants.js';
+import { wordSpeechText } from '../../utils.js';
 import { TagChip } from '../tags/TagChip.jsx';
+import { SpeakButton } from '../ui/SpeakButton.jsx';
+import { ComparisonParts } from '../words/ComparisonParts.jsx';
 import { ExampleBlock } from '../words/ExampleBlock.jsx';
 import { GenderBadge } from '../words/GenderBadge.jsx';
 import { MeaningList } from '../words/MeaningList.jsx';
@@ -18,6 +21,7 @@ export function FlashcardBack({ word }) {
   const type = WORD_TYPES[word.type];
   const isNoun = word.type === 'noun';
   const isVerb = word.type === 'verb';
+  const isAdjective = word.type === 'adjective';
 
   return (
     <div className="flashcard-face flashcard-face--back">
@@ -41,12 +45,37 @@ export function FlashcardBack({ word }) {
         ) : (
           <p className="flashcard-back__word">{word.german}</p>
         )}
+        <SpeakButton
+          text={wordSpeechText(word)}
+          label={`Listen to ${word.german}`}
+          size="md"
+          className="flashcard-back__speak"
+        />
       </div>
 
       <div className="flashcard-back__body">
         {isVerb ? (
           <DetailRow label="Principal parts">
             <PrincipalParts parts={word.parts} variant="stack" />
+          </DetailRow>
+        ) : null}
+
+        {isAdjective ? (
+          <DetailRow label="Comparison">
+            <ComparisonParts parts={word.parts} variant="stack" />
+          </DetailRow>
+        ) : null}
+
+        {isAdjective && word.opposite ? (
+          <DetailRow label="Gegenteil">
+            <span className="flashcard-opposite">
+              {word.opposite}
+              <SpeakButton
+                text={word.opposite}
+                label="Listen to the opposite"
+                size="sm"
+              />
+            </span>
           </DetailRow>
         ) : null}
 

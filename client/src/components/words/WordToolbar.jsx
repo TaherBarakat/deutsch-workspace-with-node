@@ -1,16 +1,22 @@
-import { LayoutGrid, Layers, Search, SlidersHorizontal, X } from 'lucide-react';
-import { SORT_OPTIONS } from '../../constants.js';
-import { pluralize } from '../../utils.js';
+import { CircleDot, Hash, Search, SlidersHorizontal, X } from 'lucide-react';
+import { GENDER_SORT_OPTIONS, SORT_OPTIONS } from '../../constants.js';
+import { cx, pluralize } from '../../utils.js';
 
 export function WordToolbar({
   search,
   onSearch,
   sort,
   onSort,
-  grouped,
-  onToggleGrouped,
+  group,
+  onGroupChange,
+  allowGenderGroup = false,
+  allowGenderSort = false,
   resultCount,
 }) {
+  const sortOptions = allowGenderSort
+    ? [...SORT_OPTIONS, ...GENDER_SORT_OPTIONS]
+    : SORT_OPTIONS;
+
   return (
     <div className="word-toolbar">
       <label className="search-field">
@@ -34,7 +40,7 @@ export function WordToolbar({
         <label className="select-field">
           <SlidersHorizontal size={14} aria-hidden="true" />
           <select value={sort} onChange={(event) => onSort(event.target.value)} aria-label="Sort words">
-            {SORT_OPTIONS.map((option) => (
+            {sortOptions.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
           </select>
@@ -42,13 +48,27 @@ export function WordToolbar({
 
         <button
           type="button"
-          className={grouped ? 'toolbar-toggle is-active' : 'toolbar-toggle'}
-          onClick={onToggleGrouped}
-          aria-pressed={grouped}
+          className={cx('toolbar-toggle', group === 'tags' && 'is-active')}
+          onClick={() => onGroupChange('tags')}
+          aria-pressed={group === 'tags'}
+          title="Group by tag"
         >
-          {grouped ? <Layers size={15} /> : <LayoutGrid size={15} />}
-          <span>{grouped ? 'Grouped by tag' : 'Group by tag'}</span>
+          <Hash size={15} />
+          <span>Tags</span>
         </button>
+
+        {allowGenderGroup ? (
+          <button
+            type="button"
+            className={cx('toolbar-toggle', group === 'gender' && 'is-active')}
+            onClick={() => onGroupChange('gender')}
+            aria-pressed={group === 'gender'}
+            title="Group by grammatical gender"
+          >
+            <CircleDot size={15} />
+            <span>Gender</span>
+          </button>
+        ) : null}
       </div>
     </div>
   );

@@ -1,7 +1,9 @@
 import { ExternalLink, Pencil, Trash2 } from 'lucide-react';
 import { WORD_TYPES } from '../../constants.js';
-import { cx } from '../../utils.js';
+import { cx, wordSpeechText } from '../../utils.js';
 import { TagChip } from '../tags/TagChip.jsx';
+import { SpeakButton } from '../ui/SpeakButton.jsx';
+import { ComparisonParts } from './ComparisonParts.jsx';
 import { ExampleBlock } from './ExampleBlock.jsx';
 import { GenderBadge } from './GenderBadge.jsx';
 import { MeaningList } from './MeaningList.jsx';
@@ -11,6 +13,7 @@ export function WordCard({ word, onEdit, onDelete, onTagClick }) {
   const type = WORD_TYPES[word.type];
   const Icon = type?.icon;
   const isNoun = word.type === 'noun';
+  const isAdjective = word.type === 'adjective';
 
   return (
     <article className={cx('word-card', `word-card--${word.type}`)}>
@@ -22,13 +25,20 @@ export function WordCard({ word, onEdit, onDelete, onTagClick }) {
             {word.irregular ? <span className="word-card__irregular">irregular</span> : null}
           </div>
 
-          <h3 className={cx('word-card__german', isNoun && `text-gender-${word.gender}`)}>
-            {isNoun ? (
-              <>
-                <span className="article">{word.article}</span> {word.german}
-              </>
-            ) : word.german}
-          </h3>
+          <div className="word-card__word-row">
+            <h3 className={cx('word-card__german', isNoun && `text-gender-${word.gender}`)}>
+              {isNoun ? (
+                <>
+                  <span className="article">{word.article}</span> {word.german}
+                </>
+              ) : word.german}
+            </h3>
+            <SpeakButton
+              text={wordSpeechText(word)}
+              label={`Listen to ${word.german}`}
+              size="sm"
+            />
+          </div>
 
           <div className="word-card__subline">
             {isNoun && word.gender ? <GenderBadge gender={word.gender} size="sm" /> : null}
@@ -62,6 +72,20 @@ export function WordCard({ word, onEdit, onDelete, onTagClick }) {
 
       <div className="word-card__body">
         {word.type === 'verb' ? <PrincipalParts parts={word.parts} /> : null}
+
+        {isAdjective ? <ComparisonParts parts={word.parts} /> : null}
+
+        {isAdjective && word.opposite ? (
+          <p className="word-card__opposite">
+            <span>Gegenteil</span>
+            <strong>{word.opposite}</strong>
+            <SpeakButton
+              text={word.opposite}
+              label="Listen to the opposite"
+              size="sm"
+            />
+          </p>
+        ) : null}
 
         {isNoun ? (
           <p className="word-card__translation">

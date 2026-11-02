@@ -5,7 +5,7 @@ import { WORD_TYPES } from '../constants.js';
 import { useRefresh } from '../contexts/RefreshContext.jsx';
 import { useStats } from '../hooks/useStats.js';
 import { useTags } from '../hooks/useTags.js';
-import { shuffle } from '../utils.js';
+import { parseTagsParam, shuffle } from '../utils.js';
 import { PageHeader } from '../components/ui/PageHeader.jsx';
 import { LoadingState } from '../components/ui/Loading.jsx';
 import { StudySetup } from '../components/flashcards/StudySetup.jsx';
@@ -20,6 +20,10 @@ function typesFromParam(value) {
   return requested.length > 0 ? requested : ['verb', 'noun'];
 }
 
+function tagsFromParams(searchParams) {
+  return parseTagsParam(searchParams.get('tags') ?? searchParams.get('tag') ?? '');
+}
+
 export function StudyPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -31,7 +35,8 @@ export function StudyPage() {
 
   const [config, setConfig] = useState(() => ({
     types: typesFromParam(searchParams.get('types')),
-    tag: searchParams.get('tag') ?? '',
+    tags: tagsFromParams(searchParams),
+    tagMode: searchParams.get('tagMode') === 'all' ? 'all' : 'any',
     order: searchParams.get('order') === 'shuffle' ? 'shuffle' : 'alpha',
     count: 'all',
   }));
@@ -44,7 +49,8 @@ export function StudyPage() {
     setConfig((current) => ({
       ...current,
       types: typesFromParam(searchParams.get('types')),
-      tag: searchParams.get('tag') ?? '',
+      tags: tagsFromParams(searchParams),
+      tagMode: searchParams.get('tagMode') === 'all' ? 'all' : 'any',
       order: searchParams.get('order') === 'shuffle' ? 'shuffle' : 'alpha',
     }));
     setDeck(null);
@@ -65,7 +71,8 @@ export function StudyPage() {
     try {
       const words = await api.words.list({
         types: config.types,
-        tag: config.tag || null,
+        tags: config.tags,
+        tagMode: config.tagMode,
         sort: 'alpha',
       });
 

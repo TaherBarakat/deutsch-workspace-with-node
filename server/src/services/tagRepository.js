@@ -21,3 +21,15 @@ export function listTags(type = null) {
 
   return db.prepare(sql).all(params);
 }
+
+export function listSentenceTags() {
+  return db
+    .prepare(`
+      SELECT t.id, t.name, COUNT(st.sentence_id) AS count
+      FROM tags t
+      JOIN sentence_tags st ON st.tag_id = t.id
+      GROUP BY t.id
+      ORDER BY t.name COLLATE NOCASE ASC
+    `)
+    .all();
+}

@@ -6,10 +6,11 @@ import {
   Sparkles,
   X,
 } from 'lucide-react';
-import { WORD_TYPE_LIST } from '../../constants.js';
+import { SENTENCE_META, WORD_TYPE_LIST } from '../../constants.js';
 import { pluralize } from '../../utils.js';
 import { useStats } from '../../hooks/useStats.js';
 import { useRefresh } from '../../contexts/RefreshContext.jsx';
+import { ThemeToggle } from './ThemeToggle.jsx';
 
 const PRIMARY_NAV = [
   { to: '/', label: 'Overview', icon: LayoutDashboard, end: true },
@@ -19,6 +20,12 @@ const PRIMARY_NAV = [
     icon: type.icon,
     countKey: type.key,
   })),
+  {
+    to: SENTENCE_META.path,
+    label: SENTENCE_META.label,
+    icon: SENTENCE_META.icon,
+    sentenceCount: true,
+  },
 ];
 
 export function Sidebar({ open, onClose }) {
@@ -45,7 +52,11 @@ export function Sidebar({ open, onClose }) {
         <p className="sidebar__label">Library</p>
         {PRIMARY_NAV.map((item) => {
           const Icon = item.icon;
-          const count = item.countKey ? stats.byType[item.countKey] ?? 0 : null;
+          const count = item.sentenceCount
+            ? stats.sentences ?? 0
+            : item.countKey
+              ? stats.byType[item.countKey] ?? 0
+              : null;
 
           return (
             <NavLink
@@ -84,6 +95,8 @@ export function Sidebar({ open, onClose }) {
       </nav>
 
       <div className="sidebar__bottom">
+        <ThemeToggle className="sidebar__theme" />
+
         <div className="sidebar__card">
           <BookMarked size={19} aria-hidden="true" />
           <div>

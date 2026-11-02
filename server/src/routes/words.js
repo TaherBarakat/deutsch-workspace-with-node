@@ -1,6 +1,12 @@
 import { Router } from 'express';
 import { ApiError } from '../lib/errors.js';
-import { normalizeWordPayload, parseId, parseTypes } from '../lib/validation.js';
+import {
+  normalizeWordPayload,
+  parseId,
+  parseTagMode,
+  parseTags,
+  parseTypes,
+} from '../lib/validation.js';
 import {
   createWord,
   deleteWord,
@@ -14,14 +20,15 @@ export const wordsRouter = Router();
 wordsRouter.get('/', (req, res) => {
   const types = parseTypes(req.query.types ?? req.query.type);
   const search = String(req.query.q ?? '').trim().slice(0, 120);
-  const tag = String(req.query.tag ?? '').trim().slice(0, 40) || null;
+  const tags = parseTags(req.query.tags ?? req.query.tag);
+  const tagMode = parseTagMode(req.query.tagMode);
   const sort = String(req.query.sort ?? 'alpha');
   const limitValue = Number(req.query.limit);
   const limit = Number.isInteger(limitValue) && limitValue > 0
     ? Math.min(limitValue, 500)
     : null;
 
-  const words = listWords({ types, tag, search, sort, limit });
+  const words = listWords({ types, tags, tagMode, search, sort, limit });
   res.json({ words });
 });
 

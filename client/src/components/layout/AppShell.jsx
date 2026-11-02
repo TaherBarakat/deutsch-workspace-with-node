@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Layers, Menu } from 'lucide-react';
 import { Sidebar } from './Sidebar.jsx';
+import { ThemeToggle } from './ThemeToggle.jsx';
 
 export function AppShell() {
   const [navOpen, setNavOpen] = useState(false);
@@ -46,9 +47,12 @@ export function AppShell() {
             <span>Wortschatz</span>
           </NavLink>
 
-          <NavLink to="/study" className="mobile-header__study" aria-label="Open flashcards">
-            <Layers size={19} />
-          </NavLink>
+          <div className="mobile-header__actions">
+            <ThemeToggle compact />
+            <NavLink to="/study" className="mobile-header__study" aria-label="Open flashcards">
+              <Layers size={19} />
+            </NavLink>
+          </div>
         </header>
 
         <main className="page-content">

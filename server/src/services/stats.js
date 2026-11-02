@@ -18,9 +18,14 @@ export function getStats() {
     byType[row.type] = row.count;
   }
 
+  const sentenceCount = db
+    .prepare('SELECT COUNT(*) AS count FROM sentences')
+    .get()?.count ?? 0;
+
   return {
     total: Object.values(byType).reduce((sum, count) => sum + count, 0),
     byType,
+    sentences: sentenceCount,
     tags: listTags(),
     recent: listWords({ sort: 'newest', limit: 5 }),
   };

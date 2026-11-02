@@ -13,26 +13,50 @@ import { useToast } from '../../contexts/ToastContext.jsx';
 import { Modal } from '../ui/Modal.jsx';
 import { Button } from '../ui/Button.jsx';
 import { TagInput } from '../tags/TagInput.jsx';
+import { ComparisonParts } from '../words/ComparisonParts.jsx';
 import { PrincipalParts } from '../words/PrincipalParts.jsx';
 import { GenderBadge } from '../words/GenderBadge.jsx';
 
 const ARTICLE_BY_GENDER = { m: 'der', f: 'die', n: 'das' };
 const GENDER_BY_ARTICLE = { der: 'm', die: 'f', das: 'n' };
 const PARTS = ['present', 'past', 'perfect'];
+const COMPARISON_PARTS = ['positive', 'comparative', 'superlative'];
+
+const PART_FIELDS = {
+  verb: [
+    { key: 'present', label: 'Present (er/sie/es)', placeholder: 'geht' },
+    { key: 'past', label: 'Past (Präteritum)', placeholder: 'ging' },
+    { key: 'perfect', label: 'Perfect', placeholder: 'ist gegangen' },
+  ],
+  adjective: [
+    { key: 'positive', label: 'Positive', placeholder: 'schnell' },
+    { key: 'comparative', label: 'Comparative', placeholder: 'schneller' },
+    { key: 'superlative', label: 'Superlative', placeholder: 'am schnellsten' },
+  ],
+};
+
+function partKeysFor(type) {
+  if (type === 'verb') return PARTS;
+  if (type === 'adjective') return COMPARISON_PARTS;
+  return [];
+}
 
 function initialForm(type, word) {
+  const parts = {};
+
+  for (const key of partKeysFor(type)) {
+    parts[key] = word?.parts?.[key]?.text ?? '';
+  }
+
   return {
     german: word?.german ?? '',
     article: word?.article ?? '',
     gender: word?.gender ?? '',
     plural: word?.plural ?? '',
     english: (word?.english ?? []).join(', '),
-    parts: {
-      present: word?.parts?.present?.text ?? '',
-      past: word?.parts?.past?.text ?? '',
-      perfect: word?.parts?.perfect?.text ?? '',
-    },
+    parts,
     partsData: word?.parts ?? null,
+    opposite: word?.opposite ?? '',
     irregular: Boolean(word?.irregular),
     exampleDe: word?.example?.de ?? '',
     exampleEn: word?.example?.en ?? '',
@@ -42,27 +66,31 @@ function initialForm(type, word) {
   };
 }
 
-function buildPreviewParts(parts, partsData) {
-  const preview = {};
+function buildParts(parts, partsData, type) {
+  const keys = partKeysFor(type);
+  if (keys.length === 0) return null;
 
-  for (const key of PARTS) {
-    const text = parts[key].trim();
+  const result = {};
+
+  for (const key of keys) {
+    const text = String(parts[key] ?? '').trim();
     if (!text) continue;
 
     const cached = partsData?.[key];
-    preview[key] = cached && cached.text === text
+    result[key] = cached && cached.text === text
       ? cached
       : { text, segments: [{ text, style: 'plain' }] };
   }
 
-  return Object.keys(preview).length > 0 ? preview : null;
+  return Object.keys(result).length > 0 ? result : null;
 }
 
 export function WordFormModal({ type, word = null, suggestions = [], onClose, onSaved }) {
   const typeMeta = WORD_TYPES[type];
   const isVerb = type === 'verb';
   const isNoun = type === 'noun';
-  const canLookup = isVerb || isNoun;
+  const isAdjective = type === 'adjective';
+  const canLookup = Boolean(typeMeta);
 
   const [form, setForm] = useState(() => initialForm(type, word));
   const [lookupState, setLookupState] = useState('idle');
@@ -70,7 +98,7 @@ export function WordFormModal({ type, word = null, suggestions = [], onClose, on
   const [formError, setFormError] = useState('');
   const { push } = useToast();
 
-  const previewParts = buildPreviewParts(form.parts, form.partsData);
+  const previewParts = buildParts(form.parts, form.partsData, type);
   const isEditing = Boolean(word);
 
   function updateField(field, value) {
@@ -104,26 +132,29 @@ export function WordFormModal({ type, word = null, suggestions = [], onClose, on
     try {
       const data = await api.lookup(type, form.german.trim());
 
-      setForm((current) => ({
-        ...current,
-        german: data.german ?? current.german,
-        article: data.article ?? current.article,
-        gender: data.gender ?? current.gender,
-        plural: data.plural ?? current.plural,
-        english: data.english?.length ? data.english.join(', ') : current.english,
-        parts: data.parts
-          ? {
-              present: data.parts.present?.text ?? current.parts.present,
-              past: data.parts.past?.text ?? current.parts.past,
-              perfect: data.parts.perfect?.text ?? current.parts.perfect,
-            }
-          : current.parts,
-        partsData: data.parts ?? current.partsData,
-        irregular: typeof data.irregular === 'boolean' ? data.irregular : current.irregular,
-        exampleDe: data.example?.de ?? current.exampleDe,
-        exampleEn: data.example?.en ?? current.exampleEn,
-        sourceUrl: data.sourceUrl ?? current.sourceUrl,
-      }));
+      setForm((current) => {
+        const nextParts = { ...current.parts };
+
+        for (const key of partKeysFor(type)) {
+          nextParts[key] = data.parts?.[key]?.text ?? current.parts[key] ?? '';
+        }
+
+        return {
+          ...current,
+          german: data.german ?? current.german,
+          article: data.article ?? current.article,
+          gender: data.gender ?? current.gender,
+          plural: data.plural ?? current.plural,
+          english: data.english?.length ? data.english.join(', ') : current.english,
+          parts: nextParts,
+          partsData: data.parts ?? current.partsData,
+          opposite: data.opposite || current.opposite,
+          irregular: typeof data.irregular === 'boolean' ? data.irregular : current.irregular,
+          exampleDe: data.example?.de ?? current.exampleDe,
+          exampleEn: data.example?.en ?? current.exampleEn,
+          sourceUrl: data.sourceUrl ?? current.sourceUrl,
+        };
+      });
 
       setLookupState('success');
       push(`Found "${data.german}" on verbformen.com.`, 'success');
@@ -143,18 +174,7 @@ export function WordFormModal({ type, word = null, suggestions = [], onClose, on
       return;
     }
 
-    const parts = {};
-    if (isVerb) {
-      for (const key of PARTS) {
-        const text = form.parts[key].trim();
-        if (!text) continue;
-
-        const cached = form.partsData?.[key];
-        parts[key] = cached && cached.text === text
-          ? cached
-          : { text, segments: [{ text, style: 'plain' }] };
-      }
-    }
+    const parts = buildParts(form.parts, form.partsData, type);
 
     const payload = {
       type,
@@ -163,7 +183,8 @@ export function WordFormModal({ type, word = null, suggestions = [], onClose, on
       gender: isNoun ? form.gender || null : null,
       plural: isNoun ? form.plural || null : null,
       english: splitMeanings(form.english),
-      parts: isVerb && Object.keys(parts).length > 0 ? parts : null,
+      parts,
+      opposite: isAdjective ? form.opposite || null : null,
       irregular: isVerb ? form.irregular : false,
       example: {
         de: form.exampleDe,
@@ -191,6 +212,14 @@ export function WordFormModal({ type, word = null, suggestions = [], onClose, on
       setSaving(false);
     }
   }
+
+  const placeholder = isNoun
+    ? 'Haus'
+    : isVerb
+      ? 'gehen'
+      : isAdjective
+        ? 'schnell'
+        : 'gern';
 
   return (
     <Modal
@@ -231,7 +260,7 @@ export function WordFormModal({ type, word = null, suggestions = [], onClose, on
               <input
                 value={form.german}
                 onChange={(event) => updateField('german', event.target.value)}
-                placeholder={isNoun ? 'Haus' : isVerb ? 'gehen' : 'schnell'}
+                placeholder={placeholder}
                 autoFocus
               />
             </label>
@@ -274,30 +303,16 @@ export function WordFormModal({ type, word = null, suggestions = [], onClose, on
             </div>
 
             <div className="form-grid form-grid--three">
-              <label className="field">
-                <span>Present (er/sie/es)</span>
-                <input
-                  value={form.parts.present}
-                  onChange={(event) => updatePart('present', event.target.value)}
-                  placeholder="geht"
-                />
-              </label>
-              <label className="field">
-                <span>Past (Präteritum)</span>
-                <input
-                  value={form.parts.past}
-                  onChange={(event) => updatePart('past', event.target.value)}
-                  placeholder="ging"
-                />
-              </label>
-              <label className="field">
-                <span>Perfect</span>
-                <input
-                  value={form.parts.perfect}
-                  onChange={(event) => updatePart('perfect', event.target.value)}
-                  placeholder="ist gegangen"
-                />
-              </label>
+              {PART_FIELDS.verb.map((field) => (
+                <label className="field" key={field.key}>
+                  <span>{field.label}</span>
+                  <input
+                    value={form.parts[field.key] ?? ''}
+                    onChange={(event) => updatePart(field.key, event.target.value)}
+                    placeholder={field.placeholder}
+                  />
+                </label>
+              ))}
             </div>
 
             <label className="switch-row">
@@ -312,6 +327,46 @@ export function WordFormModal({ type, word = null, suggestions = [], onClose, on
                 <small>Show the irregular marker on this word.</small>
               </span>
             </label>
+          </fieldset>
+        ) : null}
+
+        {isAdjective ? (
+          <fieldset className="form-section form-section--boxed">
+            <legend>Comparison &amp; opposite</legend>
+
+            <div className="form-section__heading">
+              <h3>Positive · comparative · superlative</h3>
+              <span>The automatic lookup fills these in when verbformen.com has them.</span>
+            </div>
+
+            <div className="parts-preview">
+              <ComparisonParts parts={previewParts} variant="stack" />
+            </div>
+
+            <div className="form-grid form-grid--three">
+              {PART_FIELDS.adjective.map((field) => (
+                <label className="field" key={field.key}>
+                  <span>{field.label}</span>
+                  <input
+                    value={form.parts[field.key] ?? ''}
+                    onChange={(event) => updatePart(field.key, event.target.value)}
+                    placeholder={field.placeholder}
+                  />
+                </label>
+              ))}
+            </div>
+
+            <label className="field">
+              <span>Gegenteil (opposite)</span>
+              <input
+                value={form.opposite}
+                onChange={(event) => updateField('opposite', event.target.value)}
+                placeholder="langsam"
+              />
+            </label>
+            <p className="form-hint">
+              The opposite is not on verbformen.com, so add it yourself if you want it on the card.
+            </p>
           </fieldset>
         ) : null}
 
@@ -371,7 +426,15 @@ export function WordFormModal({ type, word = null, suggestions = [], onClose, on
             <input
               value={form.english}
               onChange={(event) => updateField('english', event.target.value)}
-              placeholder={isVerb ? 'go, walk, leave, move' : isNoun ? 'house, home, building' : 'fast, quick'}
+              placeholder={
+                isVerb
+                  ? 'go, walk, leave, move'
+                  : isNoun
+                    ? 'house, home, building'
+                    : isAdjective
+                      ? 'fast, quick, rapid'
+                      : 'gladly, with pleasure'
+              }
             />
           </label>
         </div>

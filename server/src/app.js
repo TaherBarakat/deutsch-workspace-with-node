@@ -6,6 +6,7 @@ import express from 'express';
 import { ApiError } from './lib/errors.js';
 import { lookupRouter } from './routes/lookup.js';
 import { statsRouter, tagsRouter } from './routes/meta.js';
+import { sentencesRouter } from './routes/sentences.js';
 import { wordsRouter } from './routes/words.js';
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
@@ -22,6 +23,7 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/words', wordsRouter);
+app.use('/api/sentences', sentencesRouter);
 app.use('/api/lookup', lookupRouter);
 app.use('/api/tags', tagsRouter);
 app.use('/api/stats', statsRouter);

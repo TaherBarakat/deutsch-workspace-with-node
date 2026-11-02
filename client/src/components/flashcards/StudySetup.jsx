@@ -1,8 +1,9 @@
-import { ArrowDownAZ, Check, Layers3, Shuffle, Tag } from 'lucide-react';
+import { ArrowDownAZ, Check, Layers3, Shuffle } from 'lucide-react';
 import { STUDY_COUNTS, WORD_TYPE_LIST } from '../../constants.js';
 import { pluralize } from '../../utils.js';
 import { Button } from '../ui/Button.jsx';
 import { EmptyState } from '../ui/EmptyState.jsx';
+import { TagFilter } from '../tags/TagFilter.jsx';
 
 export function StudySetup({
   config,
@@ -87,27 +88,20 @@ export function StudySetup({
           <span className="study-step">02</span>
           <div>
             <h2>Shape the deck</h2>
-            <p>Filter by a tag and decide how many cards to review.</p>
+            <p>Filter by one or more tags and decide how many cards to review.</p>
           </div>
         </div>
 
-        <div className="study-options">
-          <label className="select-field select-field--large">
-            <Tag size={15} aria-hidden="true" />
-            <select
-              value={config.tag}
-              onChange={(event) => onChange({ ...config, tag: event.target.value })}
-              aria-label="Filter flashcards by tag"
-            >
-              <option value="">All tags</option>
-              {tags.map((tag) => (
-                <option key={tag.id} value={tag.name}>
-                  {tag.name} ({tag.count})
-                </option>
-              ))}
-            </select>
-          </label>
+        <TagFilter
+          tags={tags}
+          activeTags={config.tags}
+          mode={config.tagMode}
+          onChange={(nextTags) => onChange({ ...config, tags: nextTags })}
+          onModeChange={(tagMode) => onChange({ ...config, tagMode })}
+          label="Filter by tags"
+        />
 
+        <div className="study-options">
           <div className="segmented" role="group" aria-label="Deck order">
             <button
               type="button"
@@ -151,7 +145,9 @@ export function StudySetup({
             </strong>
           </div>
           <p>
-            {config.tag ? `Tagged “${config.tag}”. ` : 'All tags. '}
+            {config.tags.length > 0
+              ? `Tags “${config.tags.join('”, “')}” (${config.tagMode === 'all' ? 'all must match' : 'any can match'}). `
+              : 'All tags. '}
             {config.types.length > 1 ? 'Mixed categories.' : 'One category.'}
           </p>
         </div>

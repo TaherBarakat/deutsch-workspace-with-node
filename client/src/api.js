@@ -69,8 +69,31 @@ export const api = {
     },
   },
   tags: {
-    list(type, signal) {
-      return request(`/api/tags${buildQuery({ type })}`, { signal }).then((data) => data.tags);
+    list(type, signal, scope = null) {
+      return request(
+        `/api/tags${buildQuery({ type, scope })}`,
+        { signal },
+      ).then((data) => data.tags);
+    },
+  },
+  sentences: {
+    list(params = {}, signal) {
+      return request(`/api/sentences${buildQuery(params)}`, { signal })
+        .then((data) => data.sentences);
+    },
+    get(id, signal) {
+      return request(`/api/sentences/${id}`, { signal }).then((data) => data.sentence);
+    },
+    create(payload) {
+      return request('/api/sentences', { method: 'POST', body: payload })
+        .then((data) => data.sentence);
+    },
+    update(id, payload) {
+      return request(`/api/sentences/${id}`, { method: 'PUT', body: payload })
+        .then((data) => data.sentence);
+    },
+    remove(id) {
+      return request(`/api/sentences/${id}`, { method: 'DELETE' });
     },
   },
   stats: {

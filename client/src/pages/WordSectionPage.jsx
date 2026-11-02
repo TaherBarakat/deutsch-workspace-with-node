@@ -3,16 +3,16 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Layers3, Plus, SearchX } from 'lucide-react';
 import { WORD_TYPES } from '../constants.js';
 import { api } from '../api.js';
+import { parseTagsParam, pluralize, toggleTag } from '../utils.js';
 import { useRefresh } from '../contexts/RefreshContext.jsx';
 import { useToast } from '../contexts/ToastContext.jsx';
 import { useDebouncedValue } from '../hooks/useDebouncedValue.js';
 import { useTags } from '../hooks/useTags.js';
 import { useWords } from '../hooks/useWords.js';
-import { pluralize } from '../utils.js';
 import { PageHeader } from '../components/ui/PageHeader.jsx';
 import { Button } from '../components/ui/Button.jsx';
 import { EmptyState } from '../components/ui/EmptyState.jsx';
-import { CardSkeletonGrid, LoadingState } from '../components/ui/Loading.jsx';
+import { CardSkeletonGrid } from '../components/ui/Loading.jsx';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog.jsx';
 import { TagFilter } from '../components/tags/TagFilter.jsx';
 import { WordList } from '../components/words/WordList.jsx';
@@ -26,10 +26,14 @@ export function WordSectionPage({ type }) {
   const { version, refresh } = useRefresh();
   const { push } = useToast();
 
-  const tag = searchParams.get('tag') ?? '';
+  const activeTags = parseTagsParam(
+    searchParams.get('tags') ?? searchParams.get('tag') ?? '',
+  );
+  const tagMode = searchParams.get('tagMode') === 'all' ? 'all' : 'any';
   const search = searchParams.get('q') ?? '';
   const sort = searchParams.get('sort') ?? 'alpha';
-  const grouped = searchParams.get('group') === 'tags';
+  const group = searchParams.get('group') ?? '';
+  const grouped = group === 'tags' || group === 'gender';
   const addRequested = searchParams.get('add') === '1';
 
   const [formState, setFormState] = useState(null);
@@ -38,7 +42,13 @@ export function WordSectionPage({ type }) {
 
   const debouncedSearch = useDebouncedValue(search, 300);
   const { words, loading, error } = useWords(
-    { types: [type], tag, q: debouncedSearch, sort },
+    {
+      types: [type],
+      tags: activeTags,
+      tagMode,
+      q: debouncedSearch,
+      sort,
+    },
     version,
   );
   const { tags } = useTags(type, version);
@@ -60,6 +70,22 @@ export function WordSectionPage({ type }) {
     else next.delete(key);
 
     setSearchParams(next, { replace: true });
+  }
+
+  function setTags(nextTags) {
+    const next = new URLSearchParams(searchParams);
+    next.delete('tag');
+
+    if (nextTags.length > 0) next.set('tags', nextTags.join(','));
+    else next.delete('tags');
+
+    if (nextTags.length < 2) next.delete('tagMode');
+
+    setSearchParams(next, { replace: true });
+  }
+
+  function setTagMode(nextMode) {
+    setParam('tagMode', nextMode === 'all' ? 'all' : '');
   }
 
   function clearFilters() {
@@ -90,8 +116,12 @@ export function WordSectionPage({ type }) {
     }
   }
 
-  const hasFilters = Boolean(tag || search);
-  const studyLink = `/study?types=${type}${tag ? `&tag=${encodeURIComponent(tag)}` : ''}`;
+  const hasFilters = activeTags.length > 0 || Boolean(search);
+  const studyLink = `/study?types=${type}${
+    activeTags.length > 0 ? `&tags=${encodeURIComponent(activeTags.join(','))}` : ''
+  }${
+    tagMode === 'all' && activeTags.length > 1 ? `&tagMode=all` : ''
+  }`;
 
   return (
     <div className="word-section-page">
@@ -102,8 +132,12 @@ export function WordSectionPage({ type }) {
         meta={(
           <>
             <span>{pluralize(words.length, 'word')} shown</span>
-            {tag ? <span className="meta-pill">tag: {tag}</span> : null}
-            {type === 'verb' || type === 'noun' ? (
+            {activeTags.length > 0 ? (
+              <span className="meta-pill">
+                {tagMode === 'all' ? 'all' : 'any'}: {activeTags.join(' · ')}
+              </span>
+            ) : null}
+            {type === 'verb' || type === 'noun' || type === 'adjective' ? (
               <span className="meta-hint">Auto-fill available from verbformen.com</span>
             ) : null}
           </>
@@ -111,7 +145,7 @@ export function WordSectionPage({ type }) {
         actions={(
           <>
             <Button variant="secondary" icon={Layers3} onClick={() => navigate(studyLink)}>
-              Study {tag ? `“${tag}”` : 'these'}
+              Study these
             </Button>
             <Button variant="accent" icon={Plus} onClick={() => setFormState({ word: null })}>
               Add {typeMeta.singular}
@@ -125,20 +159,26 @@ export function WordSectionPage({ type }) {
         onSearch={(value) => setParam('q', value)}
         sort={sort}
         onSort={(value) => setParam('sort', value)}
-        grouped={grouped}
-        onToggleGrouped={() => setParam('group', grouped ? '' : 'tags')}
+        group={group}
+        onGroupChange={(value) => setParam('group', value === group ? '' : value)}
+        allowGenderGroup={type === 'noun'}
+        allowGenderSort={type === 'noun'}
         resultCount={words.length}
       />
 
       <TagFilter
         tags={tags}
-        activeTag={tag}
-        onChange={(nextTag) => setParam('tag', nextTag)}
+        activeTags={activeTags}
+        mode={tagMode}
+        onChange={setTags}
+        onModeChange={setTagMode}
       />
 
       {grouped && words.length > 0 ? (
         <p className="group-note">
-          Words with more than one tag appear in each matching group.
+          {group === 'gender'
+            ? 'Nouns are grouped by grammatical gender: masculine, feminine, then neuter.'
+            : 'Words with more than one tag appear in each matching group.'}
         </p>
       ) : null}
 
@@ -168,7 +208,7 @@ export function WordSectionPage({ type }) {
             icon={typeMeta.icon}
             title={`No ${typeMeta.label.toLowerCase()} yet`}
             description={
-              type === 'verb' || type === 'noun'
+              type === 'verb' || type === 'noun' || type === 'adjective'
                 ? `Add your first ${typeMeta.singular}, fetch its details from verbformen.com, and tag it for later.`
                 : `Add your first ${typeMeta.singular} with its English meaning and a short example.`
             }
@@ -181,10 +221,10 @@ export function WordSectionPage({ type }) {
       {!error && words.length > 0 ? (
         <WordList
           words={words}
-          grouped={grouped}
+          group={group}
           onEdit={(word) => setFormState({ word })}
           onDelete={setDeleteTarget}
-          onTagClick={(nextTag) => setParam('tag', nextTag)}
+          onTagClick={(nextTag) => setTags(toggleTag(activeTags, nextTag))}
         />
       ) : null}
 
