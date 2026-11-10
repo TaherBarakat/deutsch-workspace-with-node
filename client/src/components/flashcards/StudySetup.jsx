@@ -1,5 +1,9 @@
 import { ArrowDownAZ, Check, Layers3, Shuffle } from 'lucide-react';
-import { STUDY_COUNTS, WORD_TYPE_LIST } from '../../constants.js';
+import {
+  FLASHCARD_DIRECTIONS,
+  STUDY_COUNTS,
+  WORD_TYPE_LIST,
+} from '../../constants.js';
 import { pluralize } from '../../utils.js';
 import { Button } from '../ui/Button.jsx';
 import { EmptyState } from '../ui/EmptyState.jsx';
@@ -131,6 +135,23 @@ export function StudySetup({
               </button>
             ))}
           </div>
+
+          <div className="study-option-block">
+            <span className="study-option-block__label">Front of card</span>
+            <div className="segmented" role="group" aria-label="Card front">
+              {FLASHCARD_DIRECTIONS.map((direction) => (
+                <button
+                  type="button"
+                  key={direction.value}
+                  className={config.direction === direction.value ? 'is-active' : undefined}
+                  onClick={() => onChange({ ...config, direction: direction.value })}
+                  aria-pressed={config.direction === direction.value}
+                >
+                  {direction.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="deck-summary">
@@ -148,7 +169,8 @@ export function StudySetup({
             {config.tags.length > 0
               ? `Tags “${config.tags.join('”, “')}” (${config.tagMode === 'all' ? 'all must match' : 'any can match'}). `
               : 'All tags. '}
-            {config.types.length > 1 ? 'Mixed categories.' : 'One category.'}
+            {config.types.length > 1 ? 'Mixed categories. ' : 'One category. '}
+            {config.direction === 'english' ? 'English on the front.' : 'German on the front.'}
           </p>
         </div>
 

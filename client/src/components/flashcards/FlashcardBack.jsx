@@ -17,11 +17,12 @@ function DetailRow({ label, children }) {
   );
 }
 
-export function FlashcardBack({ word }) {
+export function FlashcardBack({ word, direction = 'german' }) {
   const type = WORD_TYPES[word.type];
   const isNoun = word.type === 'noun';
   const isVerb = word.type === 'verb';
   const isAdjective = word.type === 'adjective';
+  const englishFirst = direction === 'english';
 
   return (
     <div className="flashcard-face flashcard-face--back">
@@ -79,9 +80,11 @@ export function FlashcardBack({ word }) {
           </DetailRow>
         ) : null}
 
-        <DetailRow label="English">
-          <MeaningList meanings={word.english} limit={4} className="flashcard-meanings" />
-        </DetailRow>
+        {!englishFirst ? (
+          <DetailRow label="English">
+            <MeaningList meanings={word.english} limit={4} className="flashcard-meanings" />
+          </DetailRow>
+        ) : null}
 
         {isNoun ? (
           <DetailRow label="Plural">
@@ -103,7 +106,7 @@ export function FlashcardBack({ word }) {
       </div>
 
       <p className="flashcard-hint flashcard-hint--back">
-        {type?.singular} · press ← → to move through the deck
+        {type?.singular} · press H / L to move, U for sound
       </p>
     </div>
   );

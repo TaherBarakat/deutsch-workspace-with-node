@@ -38,6 +38,7 @@ export function StudyPage() {
     tags: tagsFromParams(searchParams),
     tagMode: searchParams.get('tagMode') === 'all' ? 'all' : 'any',
     order: searchParams.get('order') === 'shuffle' ? 'shuffle' : 'alpha',
+    direction: searchParams.get('direction') === 'english' ? 'english' : 'german',
     count: 'all',
   }));
   const [deck, setDeck] = useState(null);
@@ -52,6 +53,7 @@ export function StudyPage() {
       tags: tagsFromParams(searchParams),
       tagMode: searchParams.get('tagMode') === 'all' ? 'all' : 'any',
       order: searchParams.get('order') === 'shuffle' ? 'shuffle' : 'alpha',
+      direction: searchParams.get('direction') === 'english' ? 'english' : 'german',
     }));
     setDeck(null);
     setError('');
@@ -105,6 +107,7 @@ export function StudyPage() {
       <StudySession
         key={sessionKey}
         deck={deck}
+        direction={config.direction}
         onExit={() => setDeck(null)}
         onNewDeck={() => setDeck(null)}
       />

@@ -8,11 +8,12 @@ import {
   SlidersHorizontal,
   X,
 } from 'lucide-react';
-import { shuffle as shuffleArray } from '../../utils.js';
+import { shuffle as shuffleArray, wordSpeechText } from '../../utils.js';
+import { speakGerman } from '../../lib/speech.js';
 import { Button, IconButton } from '../ui/Button.jsx';
 import { Flashcard } from './Flashcard.jsx';
 
-export function StudySession({ deck, onExit, onNewDeck }) {
+export function StudySession({ deck, direction = 'german', onExit, onNewDeck }) {
   const [sessionDeck, setSessionDeck] = useState(deck);
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
@@ -56,6 +57,8 @@ export function StudySession({ deck, onExit, onNewDeck }) {
 
   useEffect(() => {
     function handleKeyDown(event) {
+      if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return;
+
       if (event.target instanceof HTMLElement) {
         const tagName = event.target.tagName;
         if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName)) return;
@@ -63,9 +66,36 @@ export function StudySession({ deck, onExit, onNewDeck }) {
 
       if (finished) return;
 
+      const key = event.key.toLowerCase();
+
       if (event.code === 'Space') {
         event.preventDefault();
         setFlipped((current) => !current);
+        return;
+      }
+
+      if (key === 'u') {
+        event.preventDefault();
+        speakGerman(wordSpeechText(word));
+        return;
+      }
+
+      if (key === 'l') {
+        event.preventDefault();
+        if (isLast) {
+          setFinished(true);
+        } else {
+          setIndex((current) => current + 1);
+          setFlipped(false);
+        }
+        return;
+      }
+
+      if (key === 'h') {
+        event.preventDefault();
+        setIndex((current) => Math.max(0, current - 1));
+        setFlipped(false);
+        return;
       }
 
       if (event.key === 'ArrowRight') {
@@ -86,7 +116,7 @@ export function StudySession({ deck, onExit, onNewDeck }) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [finished, isLast]);
+  }, [finished, isLast, word]);
 
   if (finished) {
     return (
@@ -129,7 +159,12 @@ export function StudySession({ deck, onExit, onNewDeck }) {
         <span style={{ width: `${progress}%` }} />
       </div>
 
-      <Flashcard word={word} flipped={flipped} onFlip={() => setFlipped((current) => !current)} />
+      <Flashcard
+        word={word}
+        flipped={flipped}
+        direction={direction}
+        onFlip={() => setFlipped((current) => !current)}
+      />
 
       <div className="session-controls">
         <button
@@ -157,7 +192,7 @@ export function StudySession({ deck, onExit, onNewDeck }) {
       </div>
 
       <p className="session-keyboard-hint">
-        <kbd>Space</kbd> flip · <kbd>←</kbd> <kbd>→</kbd> move
+        <kbd>Space</kbd> flip · <kbd>H</kbd> <kbd>L</kbd> move · <kbd>U</kbd> sound
       </p>
     </div>
   );

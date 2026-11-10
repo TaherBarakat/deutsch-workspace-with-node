@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Layers3, Plus, SearchX } from 'lucide-react';
+import { Layers3, ListPlus, Plus, SearchX } from 'lucide-react';
 import { WORD_TYPES } from '../constants.js';
 import { api } from '../api.js';
 import { parseTagsParam, pluralize, toggleTag } from '../utils.js';
@@ -18,6 +18,7 @@ import { TagFilter } from '../components/tags/TagFilter.jsx';
 import { WordList } from '../components/words/WordList.jsx';
 import { WordToolbar } from '../components/words/WordToolbar.jsx';
 import { WordFormModal } from '../components/words/WordFormModal.jsx';
+import { BulkWordFormModal } from '../components/words/BulkWordFormModal.jsx';
 
 export function WordSectionPage({ type }) {
   const typeMeta = WORD_TYPES[type];
@@ -37,6 +38,7 @@ export function WordSectionPage({ type }) {
   const addRequested = searchParams.get('add') === '1';
 
   const [formState, setFormState] = useState(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -147,6 +149,9 @@ export function WordSectionPage({ type }) {
             <Button variant="secondary" icon={Layers3} onClick={() => navigate(studyLink)}>
               Study these
             </Button>
+            <Button variant="secondary" icon={ListPlus} onClick={() => setBulkOpen(true)}>
+              Bulk add
+            </Button>
             <Button variant="accent" icon={Plus} onClick={() => setFormState({ word: null })}>
               Add {typeMeta.singular}
             </Button>
@@ -235,6 +240,15 @@ export function WordSectionPage({ type }) {
           suggestions={allTags}
           onClose={() => setFormState(null)}
           onSaved={handleSaved}
+        />
+      ) : null}
+
+      {bulkOpen ? (
+        <BulkWordFormModal
+          type={type}
+          suggestions={allTags}
+          onClose={() => setBulkOpen(false)}
+          onImported={refresh}
         />
       ) : null}
 

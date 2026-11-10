@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Check, Languages, LoaderCircle } from 'lucide-react';
 import { api } from '../../api.js';
 import { useToast } from '../../contexts/ToastContext.jsx';
+import { rememberTags } from '../../lib/recentTags.js';
 import {
   isTranslatorSupported,
   translateGermanToEnglish,
@@ -86,6 +87,7 @@ export function SentenceFormModal({ sentence = null, suggestions = [], onClose, 
         : await api.sentences.create(payload);
 
       push(isEditing ? 'Sentence updated.' : 'Sentence added.', 'success');
+      rememberTags(form.tags);
       onSaved(saved);
     } catch (error) {
       setFormError(error.message);

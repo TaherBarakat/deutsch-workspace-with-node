@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { GENDERS, WORD_TYPES } from '../../constants.js';
 import { api } from '../../api.js';
+import { rememberTags } from '../../lib/recentTags.js';
 import { splitMeanings } from '../../utils.js';
 import { useToast } from '../../contexts/ToastContext.jsx';
 import { Modal } from '../ui/Modal.jsx';
@@ -206,6 +207,7 @@ export function WordFormModal({ type, word = null, suggestions = [], onClose, on
         isEditing ? `"${savedWord.german}" updated.` : `"${savedWord.german}" added to your ${typeMeta.label.toLowerCase()}.`,
         'success',
       );
+      rememberTags(form.tags);
       onSaved(savedWord);
     } catch (error) {
       setFormError(error.message);

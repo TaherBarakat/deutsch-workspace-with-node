@@ -70,17 +70,20 @@ export const SENTENCE_META = {
   tone: 'sentence',
 };
 
-export const QUICK_TAGS = [
+export const FIXED_TAGS = [
   'A1.1',
   'A1.2',
-  'A1.3',
   'A2.1',
   'A2.2',
   'B1.1',
   'B1.2',
-  'irregular',
-  'business',
-  'everyday',
+  'B2.1',
+  'B2.2',
+];
+
+export const FLASHCARD_DIRECTIONS = [
+  { value: 'german', label: 'German first' },
+  { value: 'english', label: 'English first' },
 ];
 
 export const SORT_OPTIONS = [

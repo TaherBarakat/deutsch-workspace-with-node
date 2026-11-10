@@ -1,10 +1,29 @@
 import { useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
-import { QUICK_TAGS } from '../../constants.js';
+import { FIXED_TAGS } from '../../constants.js';
+import { getRecentTags } from '../../lib/recentTags.js';
 import { TagChip } from './TagChip.jsx';
 
 function suggestionName(suggestion) {
   return typeof suggestion === 'string' ? suggestion : suggestion.name;
+}
+
+function uniqueNames(names) {
+  const seen = new Set();
+  const result = [];
+
+  for (const name of names) {
+    const clean = String(name ?? '').trim();
+    if (!clean) continue;
+
+    const key = clean.toLowerCase();
+    if (seen.has(key)) continue;
+
+    seen.add(key);
+    result.push(clean);
+  }
+
+  return result;
 }
 
 export function TagInput({ value, onChange, suggestions = [], placeholder = 'Add a tag, e.g. A1.1' }) {
@@ -12,23 +31,36 @@ export function TagInput({ value, onChange, suggestions = [], placeholder = 'Add
   const [focused, setFocused] = useState(false);
 
   const suggestionNames = useMemo(
-    () => suggestions.map(suggestionName).filter(Boolean),
+    () => uniqueNames([
+      ...FIXED_TAGS,
+      ...suggestions.map(suggestionName).filter(Boolean),
+    ]),
     [suggestions],
+  );
+
+  const selectedKeys = useMemo(
+    () => new Set(value.map((tag) => tag.toLowerCase())),
+    [value],
   );
 
   const filteredSuggestions = useMemo(() => {
     const normalisedQuery = query.trim().toLowerCase();
-    const selected = new Set(value.map((tag) => tag.toLowerCase()));
 
     return suggestionNames
-      .filter((name) => !selected.has(name.toLowerCase()))
+      .filter((name) => !selectedKeys.has(name.toLowerCase()))
       .filter((name) => !normalisedQuery || name.toLowerCase().includes(normalisedQuery))
       .slice(0, 7);
-  }, [query, suggestionNames, value]);
+  }, [query, selectedKeys, suggestionNames]);
 
-  const quickTags = QUICK_TAGS
-    .filter((tag) => !value.some((selected) => selected.toLowerCase() === tag.toLowerCase()))
-    .slice(0, 7);
+  const recommendedTags = useMemo(() => {
+    const fixedKeys = new Set(FIXED_TAGS.map((tag) => tag.toLowerCase()));
+    const recent = getRecentTags().filter((tag) => !fixedKeys.has(tag.toLowerCase()));
+    const existing = suggestionNames.filter((tag) => !fixedKeys.has(tag.toLowerCase()));
+
+    return uniqueNames([...recent, ...existing])
+      .filter((tag) => !selectedKeys.has(tag.toLowerCase()))
+      .slice(0, 8);
+  }, [selectedKeys, suggestionNames]);
 
   function addTag(rawTag) {
     const tag = rawTag.trim().replace(/,+$/, '');
@@ -95,14 +127,36 @@ export function TagInput({ value, onChange, suggestions = [], placeholder = 'Add
         </div>
       ) : null}
 
-      <div className="tag-input__quick">
-        <span>Quick add</span>
-        {quickTags.map((tag) => (
-          <button type="button" key={tag} onClick={() => addTag(tag)}>
-            {tag}
-          </button>
-        ))}
+      <div className="tag-input__quick tag-input__fixed">
+        <span>Level tags</span>
+        {FIXED_TAGS.map((tag) => {
+          const selected = selectedKeys.has(tag.toLowerCase());
+
+          return (
+            <button
+              type="button"
+              key={tag}
+              className={selected ? 'is-selected' : undefined}
+              onClick={() => addTag(tag)}
+              disabled={selected}
+              aria-pressed={selected}
+            >
+              {tag}
+            </button>
+          );
+        })}
       </div>
+
+      {recommendedTags.length > 0 ? (
+        <div className="tag-input__quick">
+          <span>Recommended</span>
+          {recommendedTags.map((tag) => (
+            <button type="button" key={tag} onClick={() => addTag(tag)}>
+              {tag}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
