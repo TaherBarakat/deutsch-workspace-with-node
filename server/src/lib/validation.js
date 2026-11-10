@@ -1,8 +1,25 @@
 import { ApiError } from '../lib/errors.js';
+import {
+  CASES,
+  PLURAL_PATTERNS,
+  REFLEXIVE_TYPES,
+  REGULARITIES,
+  SEPARABILITIES,
+  deriveCaseGoverned,
+  derivePluralPattern,
+  deriveReflexiveType,
+  deriveRegularity,
+  deriveSeparability,
+} from './grammar.js';
 
 export const WORD_TYPES = ['verb', 'noun', 'adjective', 'adverb'];
 export const ARTICLES = ['der', 'die', 'das'];
 export const SEGMENT_STYLES = ['plain', 'irregular', 'ending'];
+export const WORD_REGULARITIES = REGULARITIES;
+export const WORD_SEPARABILITIES = SEPARABILITIES;
+export const WORD_REFLEXIVE_TYPES = REFLEXIVE_TYPES;
+export const WORD_CASES = CASES;
+export const WORD_PLURAL_PATTERNS = PLURAL_PATTERNS;
 
 const ARTICLE_GENDER = { der: 'm', die: 'f', das: 'n' };
 const MAX_TAGS = 20;
@@ -106,6 +123,14 @@ function normalizeExample(input) {
   return de || en ? { de, en } : null;
 }
 
+function normalizeEnum(value, allowed) {
+  const raw = cleanString(value, { max: 40, label: 'The grammar tag' });
+  if (!raw) return null;
+
+  const normalized = raw.toUpperCase().replace(/[\s-]+/g, '_');
+  return allowed.includes(normalized) ? normalized : null;
+}
+
 function normalizeSourceUrl(value) {
   const url = cleanString(value, { max: 500, label: 'The source URL' });
   if (!url) return null;
@@ -144,20 +169,43 @@ export function normalizeWordPayload(input) {
     article = Object.entries(ARTICLE_GENDER).find(([, value]) => value === gender)?.[0] ?? null;
   }
 
+  const isVerb = type === 'verb';
+  const isNoun = type === 'noun';
+  const parts = normalizeParts(input.parts, type);
+  const plural = isNoun
+    ? cleanString(input.plural, { max: 120, label: 'The plural' })
+    : null;
+  const irregular = isVerb ? Boolean(input.irregular) : false;
+
   const payload = {
     type,
     german,
-    article: type === 'noun' ? article : null,
-    gender: type === 'noun' ? gender : null,
-    plural: type === 'noun'
-      ? cleanString(input.plural, { max: 120, label: 'The plural' })
-      : null,
+    article: isNoun ? article : null,
+    gender: isNoun ? gender : null,
+    plural,
     english: normalizeEnglish(input.english),
-    parts: normalizeParts(input.parts, type),
+    parts,
     opposite: type === 'adjective'
       ? cleanString(input.opposite, { max: 120, label: 'The opposite adjective' })
       : null,
-    irregular: type === 'verb' ? Boolean(input.irregular) : false,
+    irregular,
+    regularity: isVerb
+      ? normalizeEnum(input.regularity, REGULARITIES)
+        ?? deriveRegularity({ german, past: parts?.past?.text ?? null, irregular })
+      : null,
+    is_separable: isVerb
+      ? normalizeEnum(input.is_separable, SEPARABILITIES) ?? deriveSeparability({ german })
+      : null,
+    reflexive_type: isVerb
+      ? normalizeEnum(input.reflexive_type, REFLEXIVE_TYPES) ?? deriveReflexiveType({ german })
+      : null,
+    case_governed: isVerb
+      ? normalizeEnum(input.case_governed, CASES) ?? deriveCaseGoverned({ german })
+      : null,
+    plural_pattern: isNoun
+      ? normalizeEnum(input.plural_pattern, PLURAL_PATTERNS)
+        ?? derivePluralPattern({ singular: german, plural })
+      : null,
     example: normalizeExample(input),
     notes: cleanString(input.notes, { max: 2000, label: 'Notes' }),
     sourceUrl: normalizeSourceUrl(input.sourceUrl),
@@ -223,4 +271,16 @@ export function parseTags(value) {
 
 export function parseTagMode(value) {
   return String(value ?? '').toLowerCase() === 'all' ? 'all' : 'any';
+}
+
+export function parseEnumList(value, allowed) {
+  if (!value) return [];
+
+  const rawValues = Array.isArray(value) ? value : [value];
+  const values = rawValues
+    .flatMap((item) => String(item).split(','))
+    .map((item) => item.trim().toUpperCase().replace(/[\s-]+/g, '_'))
+    .filter((item) => allowed.includes(item));
+
+  return [...new Set(values)];
 }

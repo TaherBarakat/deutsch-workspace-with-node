@@ -1,4 +1,4 @@
-import { CircleDot, Hash, Search, SlidersHorizontal, X } from 'lucide-react';
+import { CircleDot, Hash, Layers, Search, SlidersHorizontal, X } from 'lucide-react';
 import { GENDER_SORT_OPTIONS, SORT_OPTIONS } from '../../constants.js';
 import { cx, pluralize } from '../../utils.js';
 
@@ -11,6 +11,9 @@ export function WordToolbar({
   onGroupChange,
   allowGenderGroup = false,
   allowGenderSort = false,
+  extraGroups = [],
+  filters = [],
+  onFilterChange,
   resultCount,
 }) {
   const sortOptions = allowGenderSort
@@ -69,7 +72,41 @@ export function WordToolbar({
             <span>Gender</span>
           </button>
         ) : null}
+
+        {extraGroups.map((option) => (
+          <button
+            type="button"
+            className={cx('toolbar-toggle', group === option.value && 'is-active')}
+            onClick={() => onGroupChange(option.value)}
+            aria-pressed={group === option.value}
+            title={`Group by ${option.label.toLowerCase()}`}
+            key={option.value}
+          >
+            <Layers size={15} />
+            <span>{option.label}</span>
+          </button>
+        ))}
       </div>
+
+      {filters.length > 0 ? (
+        <div className="word-toolbar__filters">
+          {filters.map((filter) => (
+            <label className="select-field select-field--filter" key={filter.key}>
+              <span className="select-field__label">{filter.label}</span>
+              <select
+                value={filter.value ?? ''}
+                onChange={(event) => onFilterChange(filter.key, event.target.value)}
+                aria-label={`Filter by ${filter.label.toLowerCase()}`}
+              >
+                <option value="">All</option>
+                {filter.options.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

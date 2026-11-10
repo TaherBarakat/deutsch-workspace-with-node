@@ -618,6 +618,50 @@
   letter-spacing: 0.05em;
 }
 
+.grammar-badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.grammar-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink-soft);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.grammar-badge--irregular {
+  background: rgba(228, 176, 74, 0.2);
+  color: #8a5f10;
+}
+
+.grammar-badge--separability {
+  background: rgba(63, 111, 88, 0.14);
+  color: var(--forest);
+}
+
+.grammar-badge--reflexive {
+  background: rgba(194, 84, 47, 0.14);
+  color: var(--accent);
+}
+
+.grammar-badge--case {
+  background: rgba(63, 91, 143, 0.14);
+  color: #3f5b8f;
+}
+
+.grammar-badge--plural {
+  background: rgba(126, 95, 168, 0.14);
+  color: #6a4a96;
+}
+
 .word-card__german {
   margin-top: 5px;
   overflow-wrap: anywhere;

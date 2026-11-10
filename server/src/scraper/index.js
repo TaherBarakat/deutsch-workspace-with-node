@@ -21,7 +21,12 @@ export async function lookupWord(type, word) {
     throw new ApiError(400, 'The word is too long.');
   }
 
-  const page = await fetchWordPage(cleanWord);
+  // verbformen has no conjugation page for "sich beeilen"; look up "beeilen"
+  // and let the parser keep the reflexive information from the input.
+  const fetchWord = type === 'verb'
+    ? cleanWord.replace(/^sich\s+/i, '')
+    : cleanWord;
+  const page = await fetchWordPage(fetchWord);
 
   switch (type) {
     case 'verb':

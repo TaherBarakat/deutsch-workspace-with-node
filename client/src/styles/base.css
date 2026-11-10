@@ -437,6 +437,10 @@ svg {
   text-transform: uppercase;
 }
 
+.form-section__heading--sub {
+  margin-top: 10px;
+}
+
 .form-section__heading h3 {
   font-family: var(--font-body);
   font-size: 14px;

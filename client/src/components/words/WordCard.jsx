@@ -6,6 +6,7 @@ import { SpeakButton } from '../ui/SpeakButton.jsx';
 import { ComparisonParts } from './ComparisonParts.jsx';
 import { ExampleBlock } from './ExampleBlock.jsx';
 import { GenderBadge } from './GenderBadge.jsx';
+import { GrammarBadges } from './GrammarBadges.jsx';
 import { MeaningList } from './MeaningList.jsx';
 import { PrincipalParts } from './PrincipalParts.jsx';
 
@@ -22,7 +23,6 @@ export function WordCard({ word, onEdit, onDelete, onTagClick }) {
           <div className="word-card__kicker">
             {Icon ? <Icon size={13} aria-hidden="true" /> : null}
             <span>{type?.singular}</span>
-            {word.irregular ? <span className="word-card__irregular">irregular</span> : null}
           </div>
 
           <div className="word-card__word-row">
@@ -52,6 +52,7 @@ export function WordCard({ word, onEdit, onDelete, onTagClick }) {
                 <MeaningList meanings={word.english} />
               </span>
             ) : null}
+            <GrammarBadges word={word} />
           </div>
         </div>
 

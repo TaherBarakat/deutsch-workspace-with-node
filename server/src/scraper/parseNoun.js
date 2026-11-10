@@ -1,5 +1,6 @@
 import * as cheerio from 'cheerio';
 import { ApiError } from '../lib/errors.js';
+import { derivePluralPattern } from '../lib/grammar.js';
 import { collapseWhitespace, getEnglishMeanings, getExample, getIntro } from './parseUtils.js';
 
 const GENDER_BY_ARTICLE = { der: 'm', die: 'f', das: 'n' };
@@ -34,6 +35,8 @@ export function parseNoun(html, requestedWord) {
 
   const plural = intro.match(/nominative plural\s+"([^"]+)"/i)?.[1]
     ?? null;
+  const pluralOnly = /no singular form|plural only|only occurs in the plural|nur im plural|nur plural/i.test(intro)
+    || /genitive singular\s+"-"/i.test(intro);
 
   return {
     type: 'noun',
@@ -41,6 +44,11 @@ export function parseNoun(html, requestedWord) {
     article: article ?? (gender ? Object.keys(GENDER_BY_ARTICLE).find((key) => GENDER_BY_ARTICLE[key] === gender) : null),
     gender,
     plural: plural ? collapseWhitespace(plural) : null,
+    plural_pattern: derivePluralPattern({
+      singular: parsedWord,
+      plural: plural ? collapseWhitespace(plural) : null,
+      pluralOnly,
+    }),
     english: getEnglishMeanings($),
     example: getExample($),
     sourceUrl: `https://www.verbformen.com/?w=${encodeURIComponent(parsedWord)}`,

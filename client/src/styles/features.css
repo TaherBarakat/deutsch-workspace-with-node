@@ -664,6 +664,18 @@
   color: #ffe6d3;
 }
 
+[data-theme='dark'] .grammar-badge--irregular {
+  color: #e4b04a;
+}
+
+[data-theme='dark'] .grammar-badge--case {
+  color: #9db4e2;
+}
+
+[data-theme='dark'] .grammar-badge--plural {
+  color: #c3a8e8;
+}
+
 [data-theme='dark'] .type-toggle.is-selected {
   border-color: var(--accent);
   box-shadow: inset 0 0 0 1px var(--accent);

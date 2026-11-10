@@ -98,6 +98,66 @@ export const GENDER_SORT_OPTIONS = [
   { value: 'gender_desc', label: 'Gender: n → f → m' },
 ];
 
+export const REGULARITY_OPTIONS = [
+  { value: 'REGULAR', label: 'Regular' },
+  { value: 'IRREGULAR', label: 'Irregular' },
+  { value: 'MIXED', label: 'Mixed' },
+  { value: 'MODAL', label: 'Modal' },
+];
+
+export const SEPARABILITY_OPTIONS = [
+  { value: 'SEPARABLE', label: 'Separable' },
+  { value: 'INSEPARABLE', label: 'Inseparable' },
+  { value: 'NONE', label: 'No prefix' },
+];
+
+export const REFLEXIVE_OPTIONS = [
+  { value: 'NOT_REFLEXIVE', label: 'Not reflexive' },
+  { value: 'MANDATORY_REFLEXIVE', label: 'Reflexive' },
+  { value: 'OPTIONAL_REFLEXIVE', label: 'Optional reflexive' },
+];
+
+export const CASE_OPTIONS = [
+  { value: 'ACCUSATIVE', label: 'Accusative' },
+  { value: 'DATIVE', label: 'Dative' },
+  { value: 'BOTH', label: 'Dative + accusative' },
+  { value: 'PREPOSITIONAL', label: 'Prepositional' },
+];
+
+export const PLURAL_PATTERN_OPTIONS = [
+  { value: 'NO_CHANGE', label: 'No change' },
+  { value: 'UMLAUT_ONLY', label: 'Umlaut only' },
+  { value: 'E_ENDING', label: '-e' },
+  { value: 'UMLAUT_PLUS_E', label: 'Umlaut + -e' },
+  { value: 'EN_ENDING', label: '-en' },
+  { value: 'ER_ENDING', label: '-er' },
+  { value: 'UMLAUT_PLUS_ER', label: 'Umlaut + -er' },
+  { value: 'S_ENDING', label: '-s' },
+  { value: 'PLURAL_ONLY', label: 'Plural only' },
+  { value: 'UNCOUNTABLE', label: 'Uncountable' },
+];
+
+function labelMap(options) {
+  return Object.fromEntries(options.map((option) => [option.value, option.label]));
+}
+
+export const REGULARITY_LABELS = labelMap(REGULARITY_OPTIONS);
+export const SEPARABILITY_LABELS = labelMap(SEPARABILITY_OPTIONS);
+export const REFLEXIVE_LABELS = labelMap(REFLEXIVE_OPTIONS);
+export const CASE_LABELS = labelMap(CASE_OPTIONS);
+export const PLURAL_PATTERN_LABELS = labelMap(PLURAL_PATTERN_OPTIONS);
+
+export const VERB_GROUP_OPTIONS = [
+  { value: 'regularity', label: 'Regularity' },
+  { value: 'separability', label: 'Separability' },
+  { value: 'reflexive', label: 'Reflexive' },
+  { value: 'case', label: 'Case' },
+];
+
+export const NOUN_GROUP_OPTIONS = [
+  { value: 'plural', label: 'Plural' },
+];
+
 export const TAG_MODES = [
   { value: 'any', label: 'Any tag' },
   { value: 'all', label: 'All tags' },

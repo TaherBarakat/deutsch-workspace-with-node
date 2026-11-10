@@ -1,7 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Layers3, ListPlus, Plus, SearchX } from 'lucide-react';
-import { WORD_TYPES } from '../constants.js';
+import {
+  CASE_OPTIONS,
+  NOUN_GROUP_OPTIONS,
+  PLURAL_PATTERN_OPTIONS,
+  REFLEXIVE_OPTIONS,
+  REGULARITY_OPTIONS,
+  SEPARABILITY_OPTIONS,
+  VERB_GROUP_OPTIONS,
+  WORD_TYPES,
+} from '../constants.js';
 import { api } from '../api.js';
 import { parseTagsParam, pluralize, toggleTag } from '../utils.js';
 import { useRefresh } from '../contexts/RefreshContext.jsx';
@@ -34,8 +43,35 @@ export function WordSectionPage({ type }) {
   const search = searchParams.get('q') ?? '';
   const sort = searchParams.get('sort') ?? 'alpha';
   const group = searchParams.get('group') ?? '';
-  const grouped = group === 'tags' || group === 'gender';
+  const grouped = Boolean(group);
   const addRequested = searchParams.get('add') === '1';
+
+  const grammarParams = {
+    regularity: searchParams.get('regularity') ?? '',
+    is_separable: searchParams.get('is_separable') ?? '',
+    reflexive_type: searchParams.get('reflexive_type') ?? '',
+    case_governed: searchParams.get('case_governed') ?? '',
+    plural_pattern: searchParams.get('plural_pattern') ?? '',
+  };
+
+  const grammarFilters = type === 'verb'
+    ? [
+      { key: 'regularity', label: 'Regularity', options: REGULARITY_OPTIONS, value: grammarParams.regularity },
+      { key: 'is_separable', label: 'Separability', options: SEPARABILITY_OPTIONS, value: grammarParams.is_separable },
+      { key: 'reflexive_type', label: 'Reflexive', options: REFLEXIVE_OPTIONS, value: grammarParams.reflexive_type },
+      { key: 'case_governed', label: 'Case', options: CASE_OPTIONS, value: grammarParams.case_governed },
+    ]
+    : type === 'noun'
+      ? [
+        { key: 'plural_pattern', label: 'Plural', options: PLURAL_PATTERN_OPTIONS, value: grammarParams.plural_pattern },
+      ]
+      : [];
+
+  const extraGroupOptions = type === 'verb'
+    ? VERB_GROUP_OPTIONS
+    : type === 'noun'
+      ? NOUN_GROUP_OPTIONS
+      : [];
 
   const [formState, setFormState] = useState(null);
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -50,6 +86,7 @@ export function WordSectionPage({ type }) {
       tagMode,
       q: debouncedSearch,
       sort,
+      ...grammarParams,
     },
     version,
   );
@@ -118,7 +155,9 @@ export function WordSectionPage({ type }) {
     }
   }
 
-  const hasFilters = activeTags.length > 0 || Boolean(search);
+  const hasFilters = activeTags.length > 0
+    || Boolean(search)
+    || Object.values(grammarParams).some(Boolean);
   const studyLink = `/study?types=${type}${
     activeTags.length > 0 ? `&tags=${encodeURIComponent(activeTags.join(','))}` : ''
   }${
@@ -168,6 +207,9 @@ export function WordSectionPage({ type }) {
         onGroupChange={(value) => setParam('group', value === group ? '' : value)}
         allowGenderGroup={type === 'noun'}
         allowGenderSort={type === 'noun'}
+        extraGroups={extraGroupOptions}
+        filters={grammarFilters}
+        onFilterChange={setParam}
         resultCount={words.length}
       />
 
@@ -183,7 +225,17 @@ export function WordSectionPage({ type }) {
         <p className="group-note">
           {group === 'gender'
             ? 'Nouns are grouped by grammatical gender: masculine, feminine, then neuter.'
-            : 'Words with more than one tag appear in each matching group.'}
+            : group === 'regularity'
+              ? 'Verbs are grouped by regularity: regular, irregular, mixed, then modal.'
+              : group === 'separability'
+                ? 'Verbs are grouped by whether a prefix can separate from the stem.'
+                : group === 'reflexive'
+                  ? 'Verbs are grouped by whether they need or allow a reflexive pronoun.'
+                  : group === 'case'
+                    ? 'Verbs are grouped by the case or preposition pattern they govern.'
+                    : group === 'plural'
+                      ? 'Nouns are grouped by how their plural differs from the singular.'
+                      : 'Words with more than one tag appear in each matching group.'}
         </p>
       ) : null}
 

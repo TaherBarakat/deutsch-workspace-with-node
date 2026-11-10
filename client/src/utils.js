@@ -127,6 +127,38 @@ export function groupWordsByGender(words) {
   return groups;
 }
 
+/**
+ * Groups words by one grammar enum field. Known values follow the enum order
+ * from the constants file, unknown values come next, and "Not set" last.
+ */
+export function groupWordsByGrammar(words, field, options = []) {
+  const buckets = new Map();
+
+  for (const word of words) {
+    const key = word[field] || 'UNKNOWN';
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key).push(word);
+  }
+
+  const order = options.map((option) => option.value);
+  const labels = new Map(options.map((option) => [option.value, option.label]));
+  const rank = (key) => {
+    const index = order.indexOf(key);
+    if (index !== -1) return index;
+    return key === 'UNKNOWN' ? Number.MAX_SAFE_INTEGER : order.length;
+  };
+
+  return [...buckets.keys()]
+    .sort((left, right) => rank(left) - rank(right))
+    .map((key) => ({
+      key,
+      name: key === 'UNKNOWN' ? 'Not set' : (labels.get(key) ?? key),
+      words: [...buckets.get(key)].sort((left, right) => (
+        left.german.localeCompare(right.german, 'de', { sensitivity: 'base' })
+      )),
+    }));
+}
+
 export function exampleText(example) {
   if (!example) return null;
   return example.de || example.en || null;

@@ -242,6 +242,30 @@
   font-weight: 700;
 }
 
+.word-toolbar__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.select-field--filter {
+  min-height: 38px;
+  padding: 0 8px 0 10px;
+}
+
+.select-field__label {
+  color: var(--ink-muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.select-field--filter select {
+  max-width: 175px;
+}
+
 .search-field {
   display: flex;
   align-items: center;

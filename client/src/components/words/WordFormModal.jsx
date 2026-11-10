@@ -6,7 +6,15 @@ import {
   LoaderCircle,
   Sparkles,
 } from 'lucide-react';
-import { GENDERS, WORD_TYPES } from '../../constants.js';
+import {
+  CASE_OPTIONS,
+  GENDERS,
+  PLURAL_PATTERN_OPTIONS,
+  REFLEXIVE_OPTIONS,
+  REGULARITY_OPTIONS,
+  SEPARABILITY_OPTIONS,
+  WORD_TYPES,
+} from '../../constants.js';
 import { api } from '../../api.js';
 import { rememberTags } from '../../lib/recentTags.js';
 import { splitMeanings } from '../../utils.js';
@@ -59,6 +67,11 @@ function initialForm(type, word) {
     partsData: word?.parts ?? null,
     opposite: word?.opposite ?? '',
     irregular: Boolean(word?.irregular),
+    regularity: word?.regularity ?? '',
+    is_separable: word?.is_separable ?? '',
+    reflexive_type: word?.reflexive_type ?? '',
+    case_governed: word?.case_governed ?? '',
+    plural_pattern: word?.plural_pattern ?? '',
     exampleDe: word?.example?.de ?? '',
     exampleEn: word?.example?.en ?? '',
     notes: word?.notes ?? '',
@@ -151,6 +164,11 @@ export function WordFormModal({ type, word = null, suggestions = [], onClose, on
           partsData: data.parts ?? current.partsData,
           opposite: data.opposite || current.opposite,
           irregular: typeof data.irregular === 'boolean' ? data.irregular : current.irregular,
+          regularity: data.regularity ?? current.regularity,
+          is_separable: data.is_separable ?? current.is_separable,
+          reflexive_type: data.reflexive_type ?? current.reflexive_type,
+          case_governed: data.case_governed ?? current.case_governed,
+          plural_pattern: data.plural_pattern ?? current.plural_pattern,
           exampleDe: data.example?.de ?? current.exampleDe,
           exampleEn: data.example?.en ?? current.exampleEn,
           sourceUrl: data.sourceUrl ?? current.sourceUrl,
@@ -187,6 +205,11 @@ export function WordFormModal({ type, word = null, suggestions = [], onClose, on
       parts,
       opposite: isAdjective ? form.opposite || null : null,
       irregular: isVerb ? form.irregular : false,
+      regularity: isVerb ? form.regularity || null : null,
+      is_separable: isVerb ? form.is_separable || null : null,
+      reflexive_type: isVerb ? form.reflexive_type || null : null,
+      case_governed: isVerb ? form.case_governed || null : null,
+      plural_pattern: isNoun ? form.plural_pattern || null : null,
       example: {
         de: form.exampleDe,
         en: form.exampleEn,
@@ -326,9 +349,68 @@ export function WordFormModal({ type, word = null, suggestions = [], onClose, on
               <span className="switch-row__track" aria-hidden="true" />
               <span>
                 <strong>Irregular verb</strong>
-                <small>Show the irregular marker on this word.</small>
+                <small>Mark this verb as irregular on its flashcard.</small>
               </span>
             </label>
+
+            <div className="form-section__heading form-section__heading--sub">
+              <h3>Grammar filters</h3>
+              <span>Used for grouping and filtering in the verb list.</span>
+            </div>
+
+            <div className="form-grid">
+              <label className="field">
+                <span>Regularity</span>
+                <select
+                  value={form.regularity}
+                  onChange={(event) => updateField('regularity', event.target.value)}
+                >
+                  <option value="">Auto from the verb</option>
+                  {REGULARITY_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="field">
+                <span>Separability</span>
+                <select
+                  value={form.is_separable}
+                  onChange={(event) => updateField('is_separable', event.target.value)}
+                >
+                  <option value="">Auto from the prefix</option>
+                  {SEPARABILITY_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="field">
+                <span>Reflexive use</span>
+                <select
+                  value={form.reflexive_type}
+                  onChange={(event) => updateField('reflexive_type', event.target.value)}
+                >
+                  <option value="">Auto from the verb</option>
+                  {REFLEXIVE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="field">
+                <span>Governed case</span>
+                <select
+                  value={form.case_governed}
+                  onChange={(event) => updateField('case_governed', event.target.value)}
+                >
+                  <option value="">Auto from the verb</option>
+                  {CASE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
           </fieldset>
         ) : null}
 
@@ -409,6 +491,19 @@ export function WordFormModal({ type, word = null, suggestions = [], onClose, on
                 </div>
               </div>
             </div>
+
+            <label className="field">
+              <span>Plural pattern</span>
+              <select
+                value={form.plural_pattern}
+                onChange={(event) => updateField('plural_pattern', event.target.value)}
+              >
+                <option value="">Auto from the plural</option>
+                {PLURAL_PATTERN_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
 
             {form.gender ? (
               <p className="form-hint">

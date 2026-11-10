@@ -21,6 +21,11 @@ function mapRow(row) {
     parts: row.parts ? parseJson(row.parts, null) : null,
     opposite: row.opposite ?? null,
     irregular: Boolean(row.irregular),
+    regularity: row.regularity ?? null,
+    is_separable: row.is_separable ?? null,
+    reflexive_type: row.reflexive_type ?? null,
+    case_governed: row.case_governed ?? null,
+    plural_pattern: row.plural_pattern ?? null,
     example: row.example_de || row.example_en
       ? { de: row.example_de, en: row.example_en }
       : null,
@@ -100,6 +105,11 @@ export function listWords({
   search = '',
   sort = 'alpha',
   limit = null,
+  regularity = [],
+  isSeparable = [],
+  reflexiveType = [],
+  caseGoverned = [],
+  pluralPattern = [],
 } = {}) {
   const clauses = [];
   const params = {};
@@ -140,6 +150,25 @@ export function listWords({
         )
       `);
     }
+  }
+
+  const enumFilters = [
+    ['regularity', regularity],
+    ['is_separable', isSeparable],
+    ['reflexive_type', reflexiveType],
+    ['case_governed', caseGoverned],
+    ['plural_pattern', pluralPattern],
+  ];
+
+  for (const [column, values] of enumFilters) {
+    if (values.length === 0) continue;
+
+    const placeholders = values.map((value, index) => {
+      params[`${column}${index}`] = value;
+      return `@${column}${index}`;
+    });
+
+    clauses.push(`w.${column} IN (${placeholders.join(', ')})`);
   }
 
   if (search) {
@@ -194,6 +223,11 @@ function toDatabaseValues(payload) {
     parts: payload.parts ? JSON.stringify(payload.parts) : null,
     opposite: payload.opposite,
     irregular: payload.irregular ? 1 : 0,
+    regularity: payload.regularity,
+    isSeparable: payload.is_separable,
+    reflexiveType: payload.reflexive_type,
+    caseGoverned: payload.case_governed,
+    pluralPattern: payload.plural_pattern,
     exampleDe: payload.example?.de ?? null,
     exampleEn: payload.example?.en ?? null,
     notes: payload.notes,
@@ -216,9 +250,11 @@ const createTransaction = db.transaction((payload) => {
     result = db.prepare(`
       INSERT INTO words (
         type, german, article, gender, plural, english, parts, opposite, irregular,
+        regularity, is_separable, reflexive_type, case_governed, plural_pattern,
         example_de, example_en, notes, source_url
       ) VALUES (
         @type, @german, @article, @gender, @plural, @english, @parts, @opposite, @irregular,
+        @regularity, @isSeparable, @reflexiveType, @caseGoverned, @pluralPattern,
         @exampleDe, @exampleEn, @notes, @sourceUrl
       )
     `).run(values);
@@ -246,6 +282,11 @@ const updateTransaction = db.transaction((id, payload) => {
         parts = @parts,
         opposite = @opposite,
         irregular = @irregular,
+        regularity = @regularity,
+        is_separable = @isSeparable,
+        reflexive_type = @reflexiveType,
+        case_governed = @caseGoverned,
+        plural_pattern = @pluralPattern,
         example_de = @exampleDe,
         example_en = @exampleEn,
         notes = @notes,

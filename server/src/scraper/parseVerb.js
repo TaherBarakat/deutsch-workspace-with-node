@@ -1,5 +1,11 @@
 import * as cheerio from 'cheerio';
 import { ApiError } from '../lib/errors.js';
+import {
+  deriveCaseGoverned,
+  deriveReflexiveType,
+  deriveRegularity,
+  deriveSeparability,
+} from '../lib/grammar.js';
 import { collapseWhitespace, getEnglishMeanings, getExample, getIntro } from './parseUtils.js';
 
 function mergeSegments(segments) {
@@ -157,13 +163,24 @@ export function parseVerb(html, requestedWord) {
   const hasMarkedIrregularity = Object.values(parts).some((part) =>
     part.segments.some((segment) => segment.style === 'irregular'),
   );
+  const irregular = /is irregular/i.test(intro) || hasMarkedIrregularity;
+  const wasReflexive = /^sich\s+/i.test(String(requestedWord ?? '').trim());
 
   return {
     type: 'verb',
     german,
     english: getEnglishMeanings($),
     parts,
-    irregular: /is irregular/i.test(intro) || hasMarkedIrregularity,
+    irregular,
+    regularity: deriveRegularity({
+      german,
+      past: parts.past?.text ?? null,
+      irregular,
+      intro,
+    }),
+    is_separable: deriveSeparability({ german, intro }),
+    reflexive_type: deriveReflexiveType({ german, wasReflexive }),
+    case_governed: deriveCaseGoverned({ german }),
     example: getExample($),
     sourceUrl: `https://www.verbformen.com/?w=${encodeURIComponent(german)}`,
   };

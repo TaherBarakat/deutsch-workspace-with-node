@@ -11,6 +11,28 @@ CREATE TABLE IF NOT EXISTS words (
   parts TEXT,
   opposite TEXT,
   irregular INTEGER NOT NULL DEFAULT 0,
+  regularity TEXT CHECK (
+    regularity IS NULL OR regularity IN ('REGULAR', 'IRREGULAR', 'MIXED', 'MODAL')
+  ),
+  is_separable TEXT CHECK (
+    is_separable IS NULL OR is_separable IN ('SEPARABLE', 'INSEPARABLE', 'NONE')
+  ),
+  reflexive_type TEXT CHECK (
+    reflexive_type IS NULL OR reflexive_type IN (
+      'NOT_REFLEXIVE', 'MANDATORY_REFLEXIVE', 'OPTIONAL_REFLEXIVE'
+    )
+  ),
+  case_governed TEXT CHECK (
+    case_governed IS NULL OR case_governed IN (
+      'ACCUSATIVE', 'DATIVE', 'BOTH', 'PREPOSITIONAL'
+    )
+  ),
+  plural_pattern TEXT CHECK (
+    plural_pattern IS NULL OR plural_pattern IN (
+      'NO_CHANGE', 'UMLAUT_ONLY', 'E_ENDING', 'UMLAUT_PLUS_E', 'EN_ENDING',
+      'ER_ENDING', 'UMLAUT_PLUS_ER', 'S_ENDING', 'PLURAL_ONLY', 'UNCOUNTABLE'
+    )
+  ),
   example_de TEXT,
   example_en TEXT,
   notes TEXT,

@@ -1,7 +1,13 @@
 import { Router } from 'express';
 import { ApiError } from '../lib/errors.js';
 import {
+  WORD_CASES,
+  WORD_PLURAL_PATTERNS,
+  WORD_REFLEXIVE_TYPES,
+  WORD_REGULARITIES,
+  WORD_SEPARABILITIES,
   normalizeWordPayload,
+  parseEnumList,
   parseId,
   parseTagMode,
   parseTags,
@@ -23,12 +29,29 @@ wordsRouter.get('/', (req, res) => {
   const tags = parseTags(req.query.tags ?? req.query.tag);
   const tagMode = parseTagMode(req.query.tagMode);
   const sort = String(req.query.sort ?? 'alpha');
+  const regularity = parseEnumList(req.query.regularity, WORD_REGULARITIES);
+  const isSeparable = parseEnumList(req.query.is_separable, WORD_SEPARABILITIES);
+  const reflexiveType = parseEnumList(req.query.reflexive_type, WORD_REFLEXIVE_TYPES);
+  const caseGoverned = parseEnumList(req.query.case_governed, WORD_CASES);
+  const pluralPattern = parseEnumList(req.query.plural_pattern, WORD_PLURAL_PATTERNS);
   const limitValue = Number(req.query.limit);
   const limit = Number.isInteger(limitValue) && limitValue > 0
     ? Math.min(limitValue, 500)
     : null;
 
-  const words = listWords({ types, tags, tagMode, search, sort, limit });
+  const words = listWords({
+    types,
+    tags,
+    tagMode,
+    search,
+    sort,
+    limit,
+    regularity,
+    isSeparable,
+    reflexiveType,
+    caseGoverned,
+    pluralPattern,
+  });
   res.json({ words });
 });
 
