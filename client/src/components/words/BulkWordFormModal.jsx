@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
   Check,
@@ -9,6 +9,11 @@ import {
 } from 'lucide-react';
 import { WORD_TYPES } from '../../constants.js';
 import { api } from '../../api.js';
+import {
+  clearBulkDraft,
+  readBulkDraft,
+  writeBulkDraft,
+} from '../../lib/bulkDraft.js';
 import { rememberTags } from '../../lib/recentTags.js';
 import { useToast } from '../../contexts/ToastContext.jsx';
 import { Modal } from '../ui/Modal.jsx';
@@ -86,13 +91,20 @@ function createPayload(type, data, tags) {
 export function BulkWordFormModal({ type, suggestions = [], onClose, onImported }) {
   const typeMeta = WORD_TYPES[type];
   const { push } = useToast();
-  const [text, setText] = useState('');
-  const [tags, setTags] = useState([]);
+  const [initialDraft] = useState(() => readBulkDraft(type));
+  const [text, setText] = useState(initialDraft.text);
+  const [tags, setTags] = useState(initialDraft.tags);
   const [items, setItems] = useState([]);
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState('');
 
   const words = useMemo(() => parseWords(text), [text]);
+
+  // Keep the current batch in local storage so an accidental Escape or reload
+  // does not lose typed words. Saving removes the draft below.
+  useEffect(() => {
+    writeBulkDraft(type, { text, tags });
+  }, [type, text, tags]);
   const readyCount = items.filter((item) => item.status === 'ready').length;
   const savedCount = items.filter((item) => item.status === 'saved').length;
   const fetchedCount = items.filter((item) => (
@@ -157,6 +169,7 @@ export function BulkWordFormModal({ type, suggestions = [], onClose, onImported 
 
     let saved = 0;
     let failed = 0;
+    const savedKeys = new Set();
 
     for (let index = 0; index < items.length; index += 1) {
       const item = items[index];
@@ -167,6 +180,7 @@ export function BulkWordFormModal({ type, suggestions = [], onClose, onImported 
           createPayload(type, item.data, tags),
         );
         saved += 1;
+        savedKeys.add(item.raw.toLowerCase());
         updateItem(index, {
           status: 'saved',
           data: created,
@@ -184,6 +198,17 @@ export function BulkWordFormModal({ type, suggestions = [], onClose, onImported 
     setBusy(null);
 
     if (saved > 0) {
+      const remaining = words.filter((word) => !savedKeys.has(word.toLowerCase()));
+
+      if (remaining.length === 0) {
+        clearBulkDraft(type);
+        setText('');
+        setTags([]);
+      } else {
+        // Keep anything that failed or was not fetched for the next attempt.
+        setText(remaining.join('\n'));
+      }
+
       rememberTags(tags);
       push(
         failed > 0
