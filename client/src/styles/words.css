@@ -972,3 +972,118 @@
     opacity: 1;
   }
 }
+
+/* ---------- Multi-select ---------- */
+.toolbar-toggle:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.selection-bar {
+  position: sticky;
+  top: 12px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.selection-bar__summary {
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.selection-bar__summary strong {
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.selection-bar__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.selection-bar__link {
+  padding: 6px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.selection-bar__link:hover {
+  color: var(--accent-dark);
+}
+
+.word-card {
+  position: relative;
+}
+
+.word-card.is-selectable {
+  cursor: pointer;
+  padding-top: 24px;
+}
+
+.word-card.is-selectable a,
+.word-card.is-selectable button,
+.word-card.is-selectable .tag-chip {
+  pointer-events: none;
+}
+
+.word-card.is-selectable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.word-card.is-selected {
+  border-color: var(--accent);
+  border-top-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 28%, transparent), var(--shadow-md);
+}
+
+.word-card__select {
+  position: absolute;
+  top: 11px;
+  right: 14px;
+  display: inline-flex;
+  color: var(--ink-muted);
+}
+
+.word-card__select.is-checked {
+  color: var(--accent);
+}
+
+.bulk-tag-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (max-width: 620px) {
+  .selection-bar {
+    position: static;
+  }
+
+  .selection-bar__actions {
+    width: 100%;
+  }
+
+  .selection-bar__actions .button {
+    flex: 1;
+  }
+}

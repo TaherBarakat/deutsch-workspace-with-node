@@ -1,4 +1,4 @@
-import { ExternalLink, Pencil, Trash2 } from 'lucide-react';
+import { CheckSquare, ExternalLink, Pencil, Square, Trash2 } from 'lucide-react';
 import { WORD_TYPES } from '../../constants.js';
 import { cx, wordSpeechText } from '../../utils.js';
 import { TagChip } from '../tags/TagChip.jsx';
@@ -10,14 +10,50 @@ import { GrammarBadges } from './GrammarBadges.jsx';
 import { MeaningList } from './MeaningList.jsx';
 import { PrincipalParts } from './PrincipalParts.jsx';
 
-export function WordCard({ word, onEdit, onDelete, onTagClick }) {
+export function WordCard({
+  word,
+  onEdit,
+  onDelete,
+  onTagClick,
+  selectable = false,
+  selected = false,
+  onToggleSelect,
+}) {
   const type = WORD_TYPES[word.type];
   const Icon = type?.icon;
   const isNoun = word.type === 'noun';
   const isAdjective = word.type === 'adjective';
 
+  function handleSelectKeyDown(event) {
+    if (!selectable) return;
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    onToggleSelect?.(word);
+  }
+
   return (
-    <article className={cx('word-card', `word-card--${word.type}`)}>
+    <article
+      className={cx(
+        'word-card',
+        `word-card--${word.type}`,
+        selectable && 'is-selectable',
+        selected && 'is-selected',
+      )}
+      onClick={selectable ? () => onToggleSelect?.(word) : undefined}
+      onKeyDown={handleSelectKeyDown}
+      role={selectable ? 'button' : undefined}
+      tabIndex={selectable ? 0 : undefined}
+      aria-pressed={selectable ? selected : undefined}
+    >
+      {selectable ? (
+        <span
+          className={cx('word-card__select', selected && 'is-checked')}
+          aria-hidden="true"
+        >
+          {selected ? <CheckSquare size={18} /> : <Square size={18} />}
+        </span>
+      ) : null}
+
       <div className="word-card__top">
         <div className="word-card__heading">
           <div className="word-card__kicker">
@@ -56,19 +92,21 @@ export function WordCard({ word, onEdit, onDelete, onTagClick }) {
           </div>
         </div>
 
-        <div className="word-card__actions">
-          <button type="button" onClick={() => onEdit(word)} aria-label={`Edit ${word.german}`}>
-            <Pencil size={15} />
-          </button>
-          <button
-            type="button"
-            className="is-danger"
-            onClick={() => onDelete(word)}
-            aria-label={`Delete ${word.german}`}
-          >
-            <Trash2 size={15} />
-          </button>
-        </div>
+        {!selectable ? (
+          <div className="word-card__actions">
+            <button type="button" onClick={() => onEdit(word)} aria-label={`Edit ${word.german}`}>
+              <Pencil size={15} />
+            </button>
+            <button
+              type="button"
+              className="is-danger"
+              onClick={() => onDelete(word)}
+              aria-label={`Delete ${word.german}`}
+            >
+              <Trash2 size={15} />
+            </button>
+          </div>
+        ) : null}
       </div>
 
       <div className="word-card__body">

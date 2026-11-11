@@ -23,8 +23,32 @@ const GRAMMAR_GROUPS = {
   plural: { field: 'plural_pattern', options: PLURAL_PATTERN_OPTIONS },
 };
 
-export function WordList({ words, group = '', onEdit, onDelete, onTagClick }) {
+export function WordList({
+  words,
+  group = '',
+  onEdit,
+  onDelete,
+  onTagClick,
+  selectable = false,
+  selectedIds,
+  onToggleSelect,
+}) {
   const grammarGroup = GRAMMAR_GROUPS[group];
+
+  function renderCard(word, key) {
+    return (
+      <WordCard
+        key={key}
+        word={word}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onTagClick={selectable ? undefined : onTagClick}
+        selectable={selectable}
+        selected={selectable ? Boolean(selectedIds?.has(word.id)) : false}
+        onToggleSelect={onToggleSelect}
+      />
+    );
+  }
 
   if (grammarGroup) {
     const groups = groupWordsByGrammar(words, grammarGroup.field, grammarGroup.options);
@@ -44,13 +68,7 @@ export function WordList({ words, group = '', onEdit, onDelete, onTagClick }) {
 
             <div className="word-grid">
               {groupItem.words.map((word) => (
-                <WordCard
-                  key={`${groupItem.key}-${word.id}`}
-                  word={word}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                  onTagClick={onTagClick}
-                />
+                renderCard(word, `${groupItem.key}-${word.id}`)
               ))}
             </div>
           </section>
@@ -79,13 +97,7 @@ export function WordList({ words, group = '', onEdit, onDelete, onTagClick }) {
 
             <div className="word-grid">
               {groupItem.words.map((word) => (
-                <WordCard
-                  key={`${groupItem.key}-${word.id}`}
-                  word={word}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                  onTagClick={onTagClick}
-                />
+                renderCard(word, `${groupItem.key}-${word.id}`)
               ))}
             </div>
           </section>
@@ -114,13 +126,7 @@ export function WordList({ words, group = '', onEdit, onDelete, onTagClick }) {
 
             <div className="word-grid">
               {groupItem.words.map((word) => (
-                <WordCard
-                  key={`${groupItem.name}-${word.id}`}
-                  word={word}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                  onTagClick={onTagClick}
-                />
+                renderCard(word, `${groupItem.name}-${word.id}`)
               ))}
             </div>
           </section>
@@ -131,15 +137,7 @@ export function WordList({ words, group = '', onEdit, onDelete, onTagClick }) {
 
   return (
     <div className="word-grid">
-      {words.map((word) => (
-        <WordCard
-          key={word.id}
-          word={word}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onTagClick={onTagClick}
-        />
-      ))}
+      {words.map((word) => renderCard(word, word.id))}
     </div>
   );
 }

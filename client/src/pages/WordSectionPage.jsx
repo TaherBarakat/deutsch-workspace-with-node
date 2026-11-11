@@ -26,8 +26,10 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog.jsx';
 import { TagFilter } from '../components/tags/TagFilter.jsx';
 import { WordList } from '../components/words/WordList.jsx';
 import { WordToolbar } from '../components/words/WordToolbar.jsx';
+import { WordSelectionBar } from '../components/words/WordSelectionBar.jsx';
 import { WordFormModal } from '../components/words/WordFormModal.jsx';
 import { BulkWordFormModal } from '../components/words/BulkWordFormModal.jsx';
+import { BulkTagModal } from '../components/words/BulkTagModal.jsx';
 
 export function WordSectionPage({ type }) {
   const typeMeta = WORD_TYPES[type];
@@ -77,6 +79,11 @@ export function WordSectionPage({ type }) {
   const [bulkOpen, setBulkOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [selecting, setSelecting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [tagModalOpen, setTagModalOpen] = useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const debouncedSearch = useDebouncedValue(search, 300);
   const { words, loading, error } = useWords(
@@ -92,6 +99,16 @@ export function WordSectionPage({ type }) {
   );
   const { tags } = useTags(type, version);
   const { tags: allTags } = useTags(null, version);
+
+  // Drop selections for words that disappear after filtering, deleting or a
+  // refresh, so bulk actions never target something no longer on screen.
+  useEffect(() => {
+    setSelectedIds((current) => {
+      const available = new Set(words.map((word) => word.id));
+      const next = new Set([...current].filter((id) => available.has(id)));
+      return next.size === current.size ? current : next;
+    });
+  }, [words]);
 
   useEffect(() => {
     if (!addRequested) return;
@@ -155,6 +172,60 @@ export function WordSectionPage({ type }) {
     }
   }
 
+  function toggleSelecting() {
+    if (selecting) {
+      setSelecting(false);
+      setSelectedIds(new Set());
+      return;
+    }
+
+    setSelecting(true);
+  }
+
+  function toggleSelected(word) {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(word.id)) next.delete(word.id);
+      else next.add(word.id);
+      return next;
+    });
+  }
+
+  function selectAll() {
+    setSelectedIds(new Set(words.map((word) => word.id)));
+  }
+
+  function clearSelection() {
+    setSelectedIds(new Set());
+  }
+
+  async function handleBulkTag(tags) {
+    const result = await api.words.bulkTag([...selectedIds], tags);
+    push(`Tagged ${pluralize(result.updated, 'word')}.`, 'success');
+    setTagModalOpen(false);
+    setSelectedIds(new Set());
+    refresh();
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0) return;
+
+    setBulkDeleting(true);
+
+    try {
+      const result = await api.words.bulkDelete([...selectedIds]);
+      push(`${pluralize(result.deleted, 'word')} deleted.`, 'success');
+      setBulkDeleteOpen(false);
+      setSelecting(false);
+      setSelectedIds(new Set());
+      refresh();
+    } catch (requestError) {
+      push(requestError.message, 'error');
+    } finally {
+      setBulkDeleting(false);
+    }
+  }
+
   const hasFilters = activeTags.length > 0
     || Boolean(search)
     || Object.values(grammarParams).some(Boolean);
@@ -211,6 +282,8 @@ export function WordSectionPage({ type }) {
         filters={grammarFilters}
         onFilterChange={setParam}
         resultCount={words.length}
+        selecting={selecting}
+        onToggleSelecting={toggleSelecting}
       />
 
       <TagFilter
@@ -220,6 +293,18 @@ export function WordSectionPage({ type }) {
         onChange={setTags}
         onModeChange={setTagMode}
       />
+
+      {selecting ? (
+        <WordSelectionBar
+          count={selectedIds.size}
+          total={words.length}
+          onSelectAll={selectAll}
+          onClear={clearSelection}
+          onTag={() => setTagModalOpen(true)}
+          onDelete={() => setBulkDeleteOpen(true)}
+          onExit={toggleSelecting}
+        />
+      ) : null}
 
       {grouped && words.length > 0 ? (
         <p className="group-note">
@@ -282,6 +367,9 @@ export function WordSectionPage({ type }) {
           onEdit={(word) => setFormState({ word })}
           onDelete={setDeleteTarget}
           onTagClick={(nextTag) => setTags(toggleTag(activeTags, nextTag))}
+          selectable={selecting}
+          selectedIds={selectedIds}
+          onToggleSelect={toggleSelected}
         />
       ) : null}
 
@@ -312,6 +400,26 @@ export function WordSectionPage({ type }) {
           onConfirm={handleDelete}
           onClose={() => setDeleteTarget(null)}
           busy={deleting}
+        />
+      ) : null}
+
+      {tagModalOpen ? (
+        <BulkTagModal
+          count={selectedIds.size}
+          suggestions={allTags}
+          onApply={handleBulkTag}
+          onClose={() => setTagModalOpen(false)}
+        />
+      ) : null}
+
+      {bulkDeleteOpen ? (
+        <ConfirmDialog
+          title={`Delete ${pluralize(selectedIds.size, 'selected word')}?`}
+          description="This removes every selected word and its tags from your library. This cannot be undone."
+          confirmLabel={`Delete ${pluralize(selectedIds.size, 'word')}`}
+          onConfirm={handleBulkDelete}
+          onClose={() => setBulkDeleteOpen(false)}
+          busy={bulkDeleting}
         />
       ) : null}
     </div>

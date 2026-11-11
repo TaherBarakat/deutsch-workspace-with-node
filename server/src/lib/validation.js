@@ -242,6 +242,26 @@ export function parseId(value) {
   return id;
 }
 
+export function parseIds(value) {
+  const rawIds = Array.isArray(value) ? value : [value];
+  const ids = rawIds
+    .flatMap((id) => String(id).split(','))
+    .map((id) => Number(id.trim()))
+    .filter((id) => Number.isInteger(id) && id > 0);
+
+  const unique = [...new Set(ids)];
+
+  if (unique.length === 0) {
+    throw new ApiError(400, 'Select at least one word.');
+  }
+
+  if (unique.length > 500) {
+    throw new ApiError(400, 'Select 500 words or fewer at once.');
+  }
+
+  return unique;
+}
+
 export function parseTypes(value) {
   if (!value) return [];
 

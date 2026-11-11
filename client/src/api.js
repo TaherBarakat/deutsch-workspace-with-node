@@ -67,6 +67,18 @@ export const api = {
     remove(id) {
       return request(`/api/words/${id}`, { method: 'DELETE' });
     },
+    bulkTag(ids, tags) {
+      return request('/api/words/bulk-tags', {
+        method: 'POST',
+        body: { ids, tags },
+      });
+    },
+    bulkDelete(ids) {
+      return request('/api/words/bulk-delete', {
+        method: 'POST',
+        body: { ids },
+      });
+    },
   },
   tags: {
     list(type, signal, scope = null) {

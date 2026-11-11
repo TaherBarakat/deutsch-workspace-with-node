@@ -8,6 +8,7 @@ import { lookupRouter } from './routes/lookup.js';
 import { statsRouter, tagsRouter } from './routes/meta.js';
 import { sentencesRouter } from './routes/sentences.js';
 import { wordsRouter } from './routes/words.js';
+import { wordsBulkRouter } from './routes/wordsBulk.js';
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const clientDist = path.resolve(currentDir, '../../client/dist');
@@ -22,6 +23,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+app.use('/api/words', wordsBulkRouter);
 app.use('/api/words', wordsRouter);
 app.use('/api/sentences', sentencesRouter);
 app.use('/api/lookup', lookupRouter);

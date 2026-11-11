@@ -1,4 +1,4 @@
-import { CircleDot, Hash, Layers, Search, SlidersHorizontal, X } from 'lucide-react';
+import { CheckSquare, CircleDot, Hash, Layers, Search, SlidersHorizontal, X } from 'lucide-react';
 import { GENDER_SORT_OPTIONS, SORT_OPTIONS } from '../../constants.js';
 import { cx, pluralize } from '../../utils.js';
 
@@ -15,6 +15,8 @@ export function WordToolbar({
   filters = [],
   onFilterChange,
   resultCount,
+  selecting = false,
+  onToggleSelecting,
 }) {
   const sortOptions = allowGenderSort
     ? [...SORT_OPTIONS, ...GENDER_SORT_OPTIONS]
@@ -39,6 +41,18 @@ export function WordToolbar({
 
       <div className="word-toolbar__controls">
         <span className="word-toolbar__count">{pluralize(resultCount, 'word')}</span>
+
+        <button
+          type="button"
+          className={cx('toolbar-toggle', selecting && 'is-active')}
+          onClick={onToggleSelecting}
+          aria-pressed={selecting}
+          disabled={resultCount === 0}
+          title={selecting ? 'Stop selecting words' : 'Select multiple words'}
+        >
+          <CheckSquare size={15} />
+          <span>{selecting ? 'Done' : 'Select'}</span>
+        </button>
 
         <label className="select-field">
           <SlidersHorizontal size={14} aria-hidden="true" />
