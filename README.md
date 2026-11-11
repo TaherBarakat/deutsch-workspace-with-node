@@ -11,4 +11,8 @@ add source link to the flashcard
 
 ---
 
-see the no tag words
+## see the no tag words
+
+## optimize data sources
+
+use prizma
